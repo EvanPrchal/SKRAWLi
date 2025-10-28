@@ -28,15 +28,13 @@ const Profile = () => {
             <Tab className="text-skrawl-white hover:text-skrawl-cyan hover-cursor-pointer active:text-skrawl-orange">Profile</Tab>
             <Tab className="text-skrawl-white hover:text-skrawl-cyan hover-cursor-pointer active:text-skrawl-orange">Badges</Tab>
           </TabList>
-          <section className="flex flex-col h-full items-center justify-center">
-            <TabPanel>
-              <ProfileInfo badges={badges} />
-            </TabPanel>
+          <TabPanel className={"w-full h-full"}>
+            <ProfileInfo badges={badges} />
+          </TabPanel>
 
-            <TabPanel>
-              <OwnedBadges />
-            </TabPanel>
-          </section>
+          <TabPanel>
+            <OwnedBadges />
+          </TabPanel>
         </Tabs>
       </div>
     )
