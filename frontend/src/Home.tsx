@@ -7,7 +7,9 @@ function Home() {
       <div className="w-4/6 bg-skrawl-white">
         <section className="text-header font-header text-skrawl-black flex flex-col justify-around items-center h-full">
           <h1 className="text-logotype font-logotype text-skrawl-black underline">SKRAWLi</h1>
-          <p>Continue</p>
+          <Link to="/continue">
+            <p>Continue</p>
+          </Link>
           <Link to="/run">
             <p>Start Run</p>
           </Link>
