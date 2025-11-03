@@ -21,3 +21,13 @@ export type CircleShape = {
 
 export type Shape = PolygonShape | CircleShape;
 
+export type Minigame = {
+  id: string;
+  name: string;
+  type: "traceShape";
+  shapes: Shape[];
+  currentShapeIndex: number;
+  threshold: number;
+  totalReward: number;
+};
+

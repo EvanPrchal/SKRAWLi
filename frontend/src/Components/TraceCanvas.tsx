@@ -3,12 +3,14 @@ import React, { useRef, useEffect, useState } from "react";
 import type { Point, Shape } from "./types";
 
 interface TraceCanvasProps {
-  shape: Shape;
+  shapes: Shape[];
+  currentShapeIndex: number;
   threshold?: number;
   onComplete: (success: boolean, reward: number) => void;
 }
 
-const TraceCanvas: React.FC<TraceCanvasProps> = ({ shape, threshold = 20, onComplete }) => {
+const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, threshold = 20, onComplete }) => {
+  const currentShape = shapes[currentShapeIndex];
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const userPointsRef = useRef<Point[]>([]);
@@ -71,8 +73,8 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shape, threshold = 20, onComp
   const endDraw = () => {
     if (!isDrawing) return;
     setIsDrawing(false);
-    const success = evaluateTrace(userPointsRef.current, shape, threshold);
-    onComplete(success, shape.reward);
+    const success = evaluateTrace(userPointsRef.current, currentShape, threshold);
+    onComplete(success, currentShape.reward);
     userPointsRef.current = [];
     drawCanvas();
   };
@@ -85,9 +87,9 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shape, threshold = 20, onComp
     // clear considering CSS size
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // draw shape
-    if (shape.type === "polygon") {
-      const pts = (shape as any).points as Point[];
+    // draw current shape
+    if (currentShape.type === "polygon") {
+      const pts = (currentShape as any).points as Point[];
       if (pts.length > 0) {
         ctx.beginPath();
         ctx.moveTo(pts[0].x, pts[0].y);
@@ -98,8 +100,8 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shape, threshold = 20, onComp
         ctx.lineWidth = 4;
         ctx.stroke();
       }
-    } else if (shape.type === "circle") {
-      const circ = shape as any;
+    } else if (currentShape.type === "circle") {
+      const circ = currentShape as any;
       ctx.beginPath();
       ctx.arc(circ.center.x, circ.center.y, circ.radius, 0, 2 * Math.PI);
       ctx.strokeStyle = "#ccc";
@@ -129,7 +131,7 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shape, threshold = 20, onComp
       window.removeEventListener("resize", updateCanvasSize);
       window.removeEventListener("scroll", updateCanvasSize);
     };
-  }, [shape]);
+  }, [shapes, currentShapeIndex]);
 
   return (
     <canvas
@@ -145,34 +147,112 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shape, threshold = 20, onComp
 
 function evaluateTrace(userPts: Point[], shape: Shape, threshold: number): boolean {
   if (userPts.length === 0) return false;
+
+  // Minimum points needed for a valid trace
+  if (userPts.length < 10) return false;
+
   if (shape.type === "polygon") {
     const pts = (shape as any).points as Point[];
+
+    // Calculate total shape length for coverage check
+    let totalShapeLength = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const dx = pts[i].x - pts[i - 1].x;
+      const dy = pts[i].y - pts[i - 1].y;
+      totalShapeLength += Math.sqrt(dx * dx + dy * dy);
+    }
+
+    // Track how much of the shape has been traced
+    let coveredLength = 0;
+    const segmentsCovered = new Set<number>();
+
+    // For each user point, check its proximity to shape segments
     for (const up of userPts) {
-      let minDist2 = Infinity;
-      for (const tp of pts) {
-        const dx = up.x - tp.x;
-        const dy = up.y - tp.y;
-        const d2 = dx * dx + dy * dy;
-        if (d2 < minDist2) minDist2 = d2;
+      let minDist = Infinity;
+      let closestSegment = -1;
+
+      // Check distance to each line segment of the shape
+      for (let i = 1; i < pts.length; i++) {
+        const p1 = pts[i - 1];
+        const p2 = pts[i];
+
+        // Calculate distance from point to line segment
+        const A = up.x - p1.x;
+        const B = up.y - p1.y;
+        const C = p2.x - p1.x;
+        const D = p2.y - p1.y;
+
+        const dot = A * C + B * D;
+        const len_sq = C * C + D * D;
+
+        let param = -1;
+        if (len_sq !== 0) {
+          param = dot / len_sq;
+        }
+
+        let xx, yy;
+
+        if (param < 0) {
+          xx = p1.x;
+          yy = p1.y;
+        } else if (param > 1) {
+          xx = p2.x;
+          yy = p2.y;
+        } else {
+          xx = p1.x + param * C;
+          yy = p1.y + param * D;
+        }
+
+        const dx = up.x - xx;
+        const dy = up.y - yy;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < minDist) {
+          minDist = dist;
+          closestSegment = i;
+        }
       }
-      if (Math.sqrt(minDist2) > threshold) {
-        return false;
+
+      // If this point is close enough to the shape
+      if (minDist <= threshold) {
+        if (!segmentsCovered.has(closestSegment)) {
+          segmentsCovered.add(closestSegment);
+          // Add approximate segment length to covered length
+          const p1 = pts[closestSegment - 1];
+          const p2 = pts[closestSegment];
+          const dx = p2.x - p1.x;
+          const dy = p2.y - p1.y;
+          coveredLength += Math.sqrt(dx * dx + dy * dy);
+        }
       }
     }
-    return true;
+
+    // Check if enough of the shape has been covered (70%)
+    return coveredLength / totalShapeLength >= 0.7;
   } else if (shape.type === "circle") {
     const circ = shape as any;
     const { center, radius } = circ;
+
+    // Track angular coverage
+    const anglesCovered = new Set<number>();
+
     for (const up of userPts) {
       const dx = up.x - center.x;
       const dy = up.y - center.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      if (Math.abs(dist - radius) > threshold) {
-        return false;
+
+      // If point is close enough to the circle's path
+      if (Math.abs(dist - radius) <= threshold) {
+        // Calculate angle and add to coverage (rounded to nearest 5 degrees)
+        const angle = Math.round((((Math.atan2(dy, dx) * 180) / Math.PI + 360) % 360) / 5) * 5;
+        anglesCovered.add(angle);
       }
     }
-    return true;
+
+    // Check if enough of the circle has been traced (70% of 360 degrees = 252 degrees)
+    return anglesCovered.size * 5 >= 252;
   }
+
   return false;
 }
 
