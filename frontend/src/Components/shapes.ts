@@ -2,6 +2,16 @@
 import type { Shape } from "./types";
 
 export const shapes: Shape[] = [
+      {
+    id: 'horizontalLine',
+    type: 'polygon',
+    points: [
+      { x: 0, y: 0 },
+      { x: 750, y: 0 },
+
+    ],
+    reward: 5,
+  },
     {
     id: 'square1',
     type: 'polygon',

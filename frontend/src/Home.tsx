@@ -3,27 +3,27 @@ import LoginButton from "./Components/LoginButton";
 import LogoutButton from "./Components/LogoutButton";
 function Home() {
   return (
-    <div className="flex h-screen bg-skrawl-black bg-cover bg-[url(/src/assets/images/background.png)] justify-center">
+    <div className="flex h-screen bg-skrawl-cyan bg-cover bg-[url(/src/assets/images/background.png)] justify-center">
       <div className="w-4/6 bg-skrawl-white">
-        <section className="text-header font-header text-skrawl-black flex flex-col justify-around items-center h-full">
-          <h1 className="text-logotype font-logotype text-skrawl-black underline">SKRAWLi</h1>
+        <section className="text-header font-header text-skrawl-purple flex flex-col justify-around items-center h-full">
+          <h1 className="text-logotype font-logotype text-skrawl-purple  underline">SKRAWLi</h1>
           <Link to="/continue">
-            <p>Continue</p>
+            <p className="hover:text-skrawl-magenta">Continue</p>
           </Link>
           <Link to="/run">
-            <p>Start Run</p>
+            <p className="hover:text-skrawl-magenta">Start Run</p>
           </Link>
           <Link to="/shop">
-            <p>Shop</p>
+            <p className="hover:text-skrawl-magenta">Shop</p>
           </Link>
           <Link to="/profile">
-            <p>Profile</p>
+            <p className="hover:text-skrawl-magenta">Profile</p>
           </Link>
           <Link to="/options">
-            <p>Options</p>
+            <p className="hover:text-skrawl-magenta">Options</p>
           </Link>
           <Link to="/credits">
-            <p>Credits</p>
+            <p className="hover:text-skrawl-magenta">Credits</p>
           </Link>
           <section className="flex w-full justify-between px-[5%]">
             <LoginButton />

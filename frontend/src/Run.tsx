@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import Loading from "./Components/Loading";
 import TraceCanvas from "./Components/TraceCanvas";
@@ -10,13 +10,10 @@ const GAME_TIME = 60;
 
 const Run = () => {
   const { user, isAuthenticated, isLoading } = useAuth0();
-
-  const canvasWidth = 1000; // or your container width
-  const canvasHeight = 500;
-
+  const [canvasSize, setCanvasSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
   const pickRandomShape = (): Shape => {
     const base = allShapes[Math.floor(Math.random() * allShapes.length)];
-    return randomizeShape(base, canvasWidth, canvasHeight);
+    return randomizeShape(base, canvasSize.width, canvasSize.height);
   };
 
   const [started, setStarted] = useState<boolean>(false);
@@ -25,9 +22,10 @@ const Run = () => {
   const [timeLeft, setTimeLeft] = useState<number>(GAME_TIME);
   const [gameOver, setGameOver] = useState<boolean>(false);
   const [lives, setLives] = useState<number>(3);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!started) return; // **Only run when started**
+    if (!started) return;
     if (timeLeft <= 0) {
       setGameOver(true);
       return;
@@ -36,10 +34,26 @@ const Run = () => {
       setTimeLeft((t) => t - 1);
     }, 1000);
     return () => clearInterval(timer);
-  }, [timeLeft, started]); // depend on started also
+  }, [timeLeft, started]);
+
+  // New: effect to measure container size
+  useEffect(() => {
+    const el = canvasContainerRef.current;
+    if (!el) return;
+
+    const updateSize = () => {
+      const rect = el.getBoundingClientRect();
+      setCanvasSize({ width: rect.width, height: rect.height });
+    };
+
+    updateSize();
+    window.addEventListener("resize", updateSize);
+    return () => {
+      window.removeEventListener("resize", updateSize);
+    };
+  }, [started, gameOver]); // re-compute when game starts or ends
 
   const handleComplete = (success: boolean, reward: number) => {
-    if (!started || gameOver) return;
     if (success) {
       setCoins((c) => c + reward);
     } else {
@@ -71,45 +85,50 @@ const Run = () => {
 
   return (
     isAuthenticated && (
-      <div className="flex flex-col h-screen bg-skrawl-black">
-        <section className="h-1/3 text-skrawl-white border-b-3 border-black flex justify-around font-header text-header items-end">
-          <section className="flex">
+      <div className="flex flex-col h-screen bg-skrawl-black bg-[url('/src/assets/images/subtle-texture.png')] bg-cover items-center">
+        <section className={`gameplay-ui text-skrawl-white  flex justify-around font-header text-header items-end`}>
+          <div className="lives-ui flex">
             <img src="./src/assets/svgs/lives.png" alt="Lives" />
-            <h1>x{lives}</h1>
-          </section>
-          <img src={user?.picture} alt={user?.name} className="w-[5%] self-center" />
-          <section className="flex">
-            {timeLeft}
+            <h1 className="text-accent-cyan">x{lives}</h1>
+          </div>
+          <img src="./src/assets/images/pint2.png" alt={user?.name} className="w-[10%] self-center p-5" />
+          <section className="timer-ui flex">
+            <span className="text-skrawl-white">{timeLeft}</span>
             <img src="./src/assets/svgs/time.png" alt="Seconds" />
           </section>
         </section>
-
-        <div className="flex grow flex-row">
-          <section className="w-1/6 border-r-3"></section>
-
+        <div className="w-4/6 h-4/6 flex flex-col bg-skrawl-white rounded-lg relative">
           {!started ? (
-            // show start button when not started
-            <div className="flex items-center justify-center">
-              <button onClick={handleStart} className="text-logotype font-logotype text-skrawl-white">
+            <div className="flex flex-col h-full justify-around items-center">
+              <button onClick={handleStart} className="text-logotype font-logotype text-skrawl-purple hover:cursor-pointer hover:text-skrawl-magenta">
                 Start Game
               </button>
             </div>
           ) : !gameOver ? (
-            <div className="flex grow">
-              <TraceCanvas shape={currentShape} threshold={5000} onComplete={handleComplete} />
+            <div ref={canvasContainerRef} className="w-full h-full relative">
+              <TraceCanvas shape={currentShape} threshold={100} onComplete={handleComplete} />
+              {/* UI overlay container matching canvas size */}
+              <div
+                className="absolute top-0 left-0 pointer-events-none"
+                style={{
+                  width: `${canvasSize.width}px`,
+                  height: `${canvasSize.height}px`,
+                }}
+              >
+                {/* Here you could place overlay UI if needed */}
+              </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-around grow text-body font-body text-skrawl-white">
-              <p>Coins earned: {coins}</p>
+            <div className="game-over h-full flex flex-col items-center justify-center text-body font-body text-skrawl-purple">
               <h2 className="text-logotype font-logotype">Game Over!</h2>
-              <button onClick={handleStartOver}>Play Again</button>
+              <section></section>
+              <p>Coins earned: {coins}</p>
+              <button onClick={handleStartOver} className="text-skrawl-purple hover:text-skrawl-magenta pt-2">
+                Play Again
+              </button>
             </div>
           )}
-
-          <section className="w-1/6 border-l-3"></section>
         </div>
-
-        <section className="h-1/3 border-t-3"></section>
       </div>
     )
   );

@@ -59,3 +59,16 @@ export function shuffleArray<T>(array: T[]): T[] {
   }
   return arr;
 }
+
+export const randomizeColor = () => {
+  let bgColor = "bg-skrawl-purple"
+  let loadingColor: 0 | 1 | 2 = Math.floor(Math.random() * 3) as 0 | 1 | 2;
+  if (loadingColor === 0) {
+    bgColor = "bg-skrawl-magenta";
+  } else if (loadingColor === 1) {
+    bgColor = "bg-skrawl-cyan";
+  } else {
+    bgColor = "bg-skrawl-orange";
+  }
+  return bgColor
+}

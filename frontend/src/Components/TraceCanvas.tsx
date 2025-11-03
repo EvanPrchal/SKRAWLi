@@ -115,8 +115,8 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shape, threshold = 20, onComp
       for (let i = 1; i < up.length; i++) {
         ctx.lineTo(up[i].x, up[i].y);
       }
-      ctx.strokeStyle = "blue";
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#241f21";
+      ctx.lineWidth = 5;
       ctx.stroke();
     }
   };
