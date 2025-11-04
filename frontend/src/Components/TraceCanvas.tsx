@@ -1,6 +1,7 @@
 // src/TraceCanvas.tsx
 import React, { useRef, useEffect, useState } from "react";
 import type { Point, Shape } from "./types";
+import { canvasDimensions } from "./canvasContext";
 
 interface TraceCanvasProps {
   shapes: Shape[];
@@ -37,6 +38,9 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
       ctx.lineJoin = "round";
       ctx.lineCap = "round";
     }
+
+    // Update the global canvas dimensions
+    canvasDimensions.updateDimensions(rect.width, rect.height, dpr);
 
     offsetRef.current = { left: rect.left, top: rect.top };
 

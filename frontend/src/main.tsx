@@ -7,6 +7,7 @@ import Home from "./Home.tsx";
 import Run from "./Run.tsx";
 import Profile from "./Profile.tsx";
 import Credits from "./Credits.tsx";
+import Options from "./Options.tsx";
 createRoot(document.getElementById("root")!).render(
   <Auth0Provider
     domain="dev-v0mmlcufmyjsq8l7.us.auth0.com"
@@ -23,6 +24,7 @@ createRoot(document.getElementById("root")!).render(
           <Route path="/continue" element={<Run />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/credits" element={<Credits />} />
+          <Route path="/options" element={<Options />} />
         </Routes>
       </BrowserRouter>
     </StrictMode>

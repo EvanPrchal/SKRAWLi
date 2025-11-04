@@ -1,23 +1,26 @@
 import type { Minigame, Shape, Point } from "./types";
+import { canvasDimensions } from "./canvasContext";
 
 // Helper function to get random number within a range
 const random = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 
 // Function to create a random point within canvas bounds
 const randomPoint = (padding: number = 50) => {
-  const canvasWidth = 800;  // Virtual canvas width
-  const canvasHeight = 600; // Virtual canvas height
+  const { width, height } = canvasDimensions;
+  const scaledPadding = Math.min(padding, Math.min(width, height) * 0.1); // Scale padding with canvas size
   return {
-    x: random(padding, canvasWidth - padding),
-    y: random(padding, canvasHeight - padding)
+    x: random(scaledPadding, width - scaledPadding),
+    y: random(scaledPadding, height - scaledPadding)
   };
 };
 
 // Function to generate a random horizontal line
 const createRandomLine = (): Shape => {
-  const y = random(100, 500);
-  const x1 = random(100, 500);
-  const length = random(200, 300);
+  const { width, height } = canvasDimensions;
+  const padding = Math.min(width, height) * 0.1; // 10% of smallest dimension
+  const y = random(padding, height - padding);
+  const x1 = random(padding, width * 0.6);
+  const length = random(width * 0.2, width * 0.4); // 20-40% of width
 
   return {
     id: "horizontalLine",
@@ -32,8 +35,11 @@ const createRandomLine = (): Shape => {
 
 // Function to generate a random square
 const createRandomSquare = (): Shape => {
-  const topLeft = randomPoint(100);
-  const size = random(150, 200);
+  const { width, height } = canvasDimensions;
+  const maxSize = Math.min(width, height) * 0.3; // 30% of smallest dimension
+  const size = random(maxSize * 0.5, maxSize);
+  const padding = size * 0.5; // Ensure enough space for the square
+  const topLeft = randomPoint(padding);
   
   return {
     id: "square",
@@ -52,9 +58,11 @@ const createRandomSquare = (): Shape => {
 // Function to generate a random triangle
 // Function to generate a random triangle
 const createRandomTriangle = (): Shape => {
-  const centerX = random(250, 350);
-  const centerY = random(250, 350);
-  const size = random(80, 120);
+  const { width, height } = canvasDimensions;
+  const padding = Math.min(width, height) * 0.2; // 20% padding
+  const centerX = random(padding, width - padding);
+  const centerY = random(padding, height - padding);
+  const size = Math.min(width, height) * random(0.15, 0.25); // 15-25% of smallest dimension
   
   return {
     id: "triangle",
@@ -71,8 +79,11 @@ const createRandomTriangle = (): Shape => {
 
 // Function to generate a random circle
 const createRandomCircle = (): Shape => {
-  const center = randomPoint(100); // Larger padding for circle
-  const radius = random(50, 80);
+  const { width, height } = canvasDimensions;
+  const maxRadius = Math.min(width, height) * 0.15; // 15% of smallest dimension
+  const radius = random(maxRadius * 0.6, maxRadius);
+  const padding = radius * 1.2; // Extra padding to ensure circle fits
+  const center = randomPoint(padding);
   
   return {
     id: "circle",
