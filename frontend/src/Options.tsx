@@ -1,25 +1,32 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Loading from "./Components/Loading";
 
 const Options = () => {
   const { isAuthenticated, isLoading } = useAuth0();
+  const navigate = useNavigate();
 
   const [difficultyLevel, setDifficultyLevel] = useState("normal");
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [sfxVolume, setSfxVolume] = useState(50);
+  const [musicVolume, setMusicVolume] = useState(50);
   const [showTimer, setShowTimer] = useState(true);
-  const [highContrastMode, setHighContrastMode] = useState(false);
-  const [gameSpeed, setGameSpeed] = useState("normal");
 
   const handleSaveSettings = () => {
-    // TODO: Implement settings save logic
-    console.log("Saving settings:", {
+    localStorage.setItem("showTimer", showTimer.toString());
+    localStorage.setItem("difficultyLevel", difficultyLevel);
+    localStorage.setItem("sfxVolume", sfxVolume.toString());
+    localStorage.setItem("musicVolume", musicVolume.toString());
+    // Broadcast settings update so other components can react
+    window.dispatchEvent(new CustomEvent("settingsUpdated", { detail: { difficultyLevel, showTimer } }));
+    console.log("Settings saved:", {
       difficultyLevel,
-      soundEnabled,
+      sfxVolume,
+      musicVolume,
       showTimer,
-      highContrastMode,
-      gameSpeed,
     });
+    // Redirect to home page
+    navigate("/");
   };
 
   if (isLoading) {
@@ -48,37 +55,37 @@ const Options = () => {
                 </select>
               </div>
 
-              {/* Game Speed */}
-              <div className="flex flex-col gap-2">
-                <label className="text-body font-body text-skrawl-purple">Game Speed</label>
-                <select
-                  value={gameSpeed}
-                  onChange={(e) => setGameSpeed(e.target.value)}
-                  className="p-2 border rounded-md border-skrawl-purple focus:outline-none focus:ring-2 focus:ring-skrawl-magenta"
-                >
-                  <option value="slow">Slow</option>
-                  <option value="normal">Normal</option>
-                  <option value="fast">Fast</option>
-                </select>
+              {/* Volume Sliders */}
+              <div className="space-y-4">
+                {/* SFX Volume */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-body font-body text-skrawl-purple">SFX Volume: {sfxVolume}%</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={sfxVolume}
+                    onChange={(e) => setSfxVolume(Number(e.target.value))}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-skrawl-cyan"
+                  />
+                </div>
+
+                {/* Music Volume */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-body font-body text-skrawl-purple">Music Volume: {musicVolume}%</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={musicVolume}
+                    onChange={(e) => setMusicVolume(Number(e.target.value))}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-skrawl-cyan"
+                  />
+                </div>
               </div>
 
               {/* Toggle Options */}
               <div className="space-y-4">
-                {/* Sound Toggle */}
-                <div className="flex items-center justify-between">
-                  <label className="text-body font-body text-skrawl-purple">Sound Effects</label>
-                  <button
-                    onClick={() => setSoundEnabled(!soundEnabled)}
-                    className={`w-12 h-6 rounded-full transition-colors duration-200 ease-in-out ${soundEnabled ? "bg-skrawl-cyan" : "bg-gray-300"}`}
-                  >
-                    <div
-                      className={`w-4 h-4 rounded-full bg-white transform transition-transform duration-200 ease-in-out ${
-                        soundEnabled ? "translate-x-7" : "translate-x-1"
-                      }`}
-                    />
-                  </button>
-                </div>
-
                 {/* Timer Toggle */}
                 <div className="flex items-center justify-between">
                   <label className="text-body font-body text-skrawl-purple">Show Timer</label>
@@ -89,23 +96,6 @@ const Options = () => {
                     <div
                       className={`w-4 h-4 rounded-full bg-white transform transition-transform duration-200 ease-in-out ${
                         showTimer ? "translate-x-7" : "translate-x-1"
-                      }`}
-                    />
-                  </button>
-                </div>
-
-                {/* High Contrast Mode Toggle */}
-                <div className="flex items-center justify-between">
-                  <label className="text-body font-body text-skrawl-purple">High Contrast Mode</label>
-                  <button
-                    onClick={() => setHighContrastMode(!highContrastMode)}
-                    className={`w-12 h-6 rounded-full transition-colors duration-200 ease-in-out ${
-                      highContrastMode ? "bg-skrawl-cyan" : "bg-gray-300"
-                    }`}
-                  >
-                    <div
-                      className={`w-4 h-4 rounded-full bg-white transform transition-transform duration-200 ease-in-out ${
-                        highContrastMode ? "translate-x-7" : "translate-x-1"
                       }`}
                     />
                   </button>

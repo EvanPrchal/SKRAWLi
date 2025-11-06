@@ -7,11 +7,12 @@ interface MinigamesProps {
   onComplete: (success: boolean, reward: number) => void;
   onGameOver: () => void;
   onTimeUpdate: (time: number) => void;
+  initialTime?: number;
 }
 
-const MINIGAME_TIME = 10; // 10 seconds per minigame
+const MINIGAME_TIME = 10; // default seconds per minigame
 
-const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpdate }) => {
+const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpdate, initialTime }) => {
   // Function to get a random minigame
   const getRandomMinigame = () => {
     const randomMinigames = getRandomMinigames();
@@ -21,7 +22,7 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
 
   const [currentMinigame, setCurrentMinigame] = useState<Minigame>(getRandomMinigame());
   const [showTransition, setShowTransition] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(MINIGAME_TIME);
+  const [timeLeft, setTimeLeft] = useState(initialTime ?? MINIGAME_TIME);
   const [timerActive, setTimerActive] = useState(false);
   const [countdownValue, setCountdownValue] = useState<string>("3");
 
@@ -43,7 +44,15 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, timerActive, showTransition, onGameOver]);
+  }, [timeLeft, timerActive, showTransition, onGameOver, onTimeUpdate]);
+
+  // If the parent changes the initialTime (e.g. difficulty changed), update the timer
+  useEffect(() => {
+    if (initialTime !== undefined && !timerActive) {
+      setTimeLeft(initialTime);
+      onTimeUpdate(initialTime);
+    }
+  }, [initialTime, timerActive, onTimeUpdate]);
 
   // Initial countdown effect
   useEffect(() => {
@@ -77,15 +86,17 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
       // Show "Trace" for 1.5 seconds before starting the next minigame
       const timer = setTimeout(() => {
         setShowTransition(false);
-        setTimeLeft(MINIGAME_TIME); // Reset timer for next minigame
-        onTimeUpdate(MINIGAME_TIME);
+        const nextTime = initialTime ?? MINIGAME_TIME;
+        setTimeLeft(nextTime); // Reset timer for next minigame
+        onTimeUpdate(nextTime);
         setTimerActive(true);
       }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [showTransition]);
+  }, [showTransition, initialTime, onTimeUpdate]);
 
   const handleComplete = (success: boolean, reward: number) => {
+    void reward; // reward included for API parity; rewards are handled when a minigame finishes
     console.log(`Trace attempt: ${success ? "Success" : "Failed"} with threshold ${currentMinigame.threshold}`);
 
     if (success) {
@@ -108,6 +119,13 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
         }));
       }
     } else {
+      // Failed attempt - regenerate a new minigame of the same type
+      const newMinigame = getRandomMinigame();
+      // Keep trying to get the same type of minigame
+      const currentType = currentMinigame.id;
+      const randomMinigames = getRandomMinigames();
+      const sameTypeMinigame = randomMinigames.find((m) => m.id === currentType) || newMinigame;
+      setCurrentMinigame(sameTypeMinigame);
       onComplete(false, 0); // Failed attempt
     }
   };
@@ -134,6 +152,7 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
         shapes={currentMinigame.shapes}
         currentShapeIndex={currentMinigame.currentShapeIndex}
         threshold={currentMinigame.threshold}
+        currentTime={timeLeft}
         onComplete={handleComplete}
       />
     </div>

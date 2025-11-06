@@ -55,28 +55,6 @@ const createRandomSquare = (): Shape => {
   };
 };
 
-// Function to generate a random triangle
-// Function to generate a random triangle
-const createRandomTriangle = (): Shape => {
-  const { width, height } = canvasDimensions;
-  const padding = Math.min(width, height) * 0.2; // 20% padding
-  const centerX = random(padding, width - padding);
-  const centerY = random(padding, height - padding);
-  const size = Math.min(width, height) * random(0.15, 0.25); // 15-25% of smallest dimension
-  
-  return {
-    id: "triangle",
-    type: "polygon" as const,
-    points: [
-      { x: centerX, y: centerY - size }, // top
-      { x: centerX + size, y: centerY + size }, // bottom right
-      { x: centerX - size, y: centerY + size }, // bottom left
-      { x: centerX, y: centerY - size }, // back to top to close
-    ],
-    reward: 10,
-  };
-};
-
 // Function to generate a random circle
 const createRandomCircle = (): Shape => {
   const { width, height } = canvasDimensions;
@@ -119,15 +97,6 @@ export const getRandomMinigames = (): Minigame[] => [
     currentShapeIndex: 0,
     threshold: 40,
     totalReward: 15,
-  },
-  {
-    id: "m3",
-    name: "Draw the Triangles",
-    type: "traceShape",
-    shapes: generateRandomShapes(createRandomTriangle),
-    currentShapeIndex: 0,
-    threshold: 40,
-    totalReward: 10,
   },
   {
     id: "m4",

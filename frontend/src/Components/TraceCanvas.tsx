@@ -2,20 +2,25 @@
 import React, { useRef, useEffect, useState } from "react";
 import type { Point, Shape } from "./types";
 import { canvasDimensions } from "./canvasContext";
+import MiniTimer from "./MiniTimer";
 
 interface TraceCanvasProps {
   shapes: Shape[];
   currentShapeIndex: number;
   threshold?: number;
+  currentTime: number;
   onComplete: (success: boolean, reward: number) => void;
 }
 
-const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, threshold = 20, onComplete }) => {
+const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, threshold = 20, currentTime, onComplete }) => {
   const currentShape = shapes[currentShapeIndex];
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const userPointsRef = useRef<Point[]>([]);
   const offsetRef = useRef<{ left: number; top: number }>({ left: 0, top: 0 });
+
+  // Get the timer setting from localStorage, default to false if not set
+  const showTimer = localStorage.getItem("showTimer") === "true";
 
   const updateCanvasSize = () => {
     const canvas = canvasRef.current;
@@ -138,14 +143,17 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
   }, [shapes, currentShapeIndex]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      style={{ width: "100%", height: "100%", touchAction: "none", display: "block" }}
-      onPointerDown={startDraw}
-      onPointerMove={draw}
-      onPointerUp={endDraw}
-      onPointerLeave={endDraw}
-    />
+    <div className="relative w-full h-full">
+      <MiniTimer time={currentTime} show={showTimer} />
+      <canvas
+        ref={canvasRef}
+        style={{ width: "100%", height: "100%", touchAction: "none", display: "block" }}
+        onPointerDown={startDraw}
+        onPointerMove={draw}
+        onPointerUp={endDraw}
+        onPointerLeave={endDraw}
+      />
+    </div>
   );
 };
 
