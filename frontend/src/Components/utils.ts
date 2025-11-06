@@ -1,6 +1,5 @@
 // src/Components/utils.ts
 import type { Shape, Point } from "./types";
-import { shapes as allShapes } from "./shapes";
 
 // deep clone
 export function cloneShape(shape: Shape): Shape {

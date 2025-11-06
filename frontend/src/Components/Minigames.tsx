@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import type { Minigame } from "./types";
 import { getRandomMinigames } from "./minigamesData";
 import TraceCanvas from "./TraceCanvas";

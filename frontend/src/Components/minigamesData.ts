@@ -1,4 +1,4 @@
-import type { Minigame, Shape, Point } from "./types";
+import type { Minigame, Shape } from "./types";
 import { canvasDimensions } from "./canvasContext";
 
 // Helper function to get random number within a range
