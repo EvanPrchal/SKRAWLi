@@ -14,20 +14,66 @@ const randomPoint = (padding: number = 50) => {
   };
 };
 
+const randomPointWithin = (padding: number) => {
+  const { width, height } = canvasDimensions;
+  return {
+    x: random(padding, width - padding),
+    y: random(padding, height - padding),
+  };
+};
+
+const rotateAroundOrigin = (point: Point, angle: number): Point => ({
+  x: point.x * Math.cos(angle) - point.y * Math.sin(angle),
+  y: point.x * Math.sin(angle) + point.y * Math.cos(angle),
+});
+
+const translatePoint = (point: Point, offset: Point): Point => ({
+  x: point.x + offset.x,
+  y: point.y + offset.y,
+});
+
 // Function to generate a random horizontal line
 const createRandomLine = (): Shape => {
   const { width, height } = canvasDimensions;
-  const padding = Math.min(width, height) * 0.1; // 10% of smallest dimension
-  const y = random(padding, height - padding);
-  const x1 = random(padding, width * 0.6);
-  const length = random(width * 0.2, width * 0.4); // 20-40% of width
+  const padding = Math.min(width, height) * 0.12;
+  const length = random(width * 0.2, width * 0.4);
+  const halfLength = length / 2;
+  const angle = Math.random() * Math.PI * 2;
 
+  let attempts = 0;
+  while (attempts < 20) {
+    const center = randomPointWithin(padding + halfLength);
+    const dx = Math.cos(angle) * halfLength;
+    const dy = Math.sin(angle) * halfLength;
+    const start = { x: center.x - dx, y: center.y - dy };
+    const end = { x: center.x + dx, y: center.y + dy };
+
+    if (
+      start.x >= padding && start.x <= width - padding &&
+      start.y >= padding && start.y <= height - padding &&
+      end.x >= padding && end.x <= width - padding &&
+      end.y >= padding && end.y <= height - padding
+    ) {
+      return {
+        id: "angledLine",
+        type: "polygon" as const,
+        points: [start, end],
+        reward: 5,
+      };
+    }
+
+    attempts += 1;
+  }
+
+  // Fallback to horizontal line if placement fails repeatedly
+  const fallbackY = random(padding, height - padding);
+  const fallbackX = random(padding, width * 0.6);
   return {
     id: "horizontalLine",
     type: "polygon" as const,
     points: [
-      { x: x1, y },
-      { x: x1 + length, y },
+      { x: fallbackX, y: fallbackY },
+      { x: fallbackX + length, y: fallbackY },
     ],
     reward: 5,
   };
@@ -38,18 +84,45 @@ const createRandomSquare = (): Shape => {
   const { width, height } = canvasDimensions;
   const maxSize = Math.min(width, height) * 0.3; // 30% of smallest dimension
   const size = random(maxSize * 0.5, maxSize);
-  const padding = size * 0.5; // Ensure enough space for the square
-  const topLeft = randomPoint(padding);
-  
+  const halfSize = size / 2;
+  const diagonalRadius = Math.sqrt(2) * halfSize;
+  const padding = diagonalRadius + Math.min(width, height) * 0.05;
+  const angle = Math.random() * Math.PI * 2;
+
+  let attempts = 0;
+  while (attempts < 20) {
+    const center = randomPointWithin(padding);
+    const localCorners: Point[] = [
+      { x: -halfSize, y: -halfSize },
+      { x: halfSize, y: -halfSize },
+      { x: halfSize, y: halfSize },
+      { x: -halfSize, y: halfSize },
+    ];
+
+    const rotatedCorners = localCorners.map((corner) => translatePoint(rotateAroundOrigin(corner, angle), center));
+    if (rotatedCorners.every((corner) => corner.x >= padding && corner.x <= width - padding && corner.y >= padding && corner.y <= height - padding)) {
+      return {
+        id: "rotatedSquare",
+        type: "polygon" as const,
+        points: [...rotatedCorners, rotatedCorners[0]],
+        reward: 15,
+      };
+    }
+
+    attempts += 1;
+  }
+
+  // Fallback to axis-aligned square if placement fails
+  const fallbackTopLeft = randomPoint(size * 0.5);
   return {
     id: "square",
     type: "polygon" as const,
     points: [
-      topLeft,
-      { x: topLeft.x + size, y: topLeft.y },
-      { x: topLeft.x + size, y: topLeft.y + size },
-      { x: topLeft.x, y: topLeft.y + size },
-      { x: topLeft.x, y: topLeft.y }, // Close the square
+      fallbackTopLeft,
+      { x: fallbackTopLeft.x + size, y: fallbackTopLeft.y },
+      { x: fallbackTopLeft.x + size, y: fallbackTopLeft.y + size },
+      { x: fallbackTopLeft.x, y: fallbackTopLeft.y + size },
+      { x: fallbackTopLeft.x, y: fallbackTopLeft.y },
     ],
     reward: 15,
   };
