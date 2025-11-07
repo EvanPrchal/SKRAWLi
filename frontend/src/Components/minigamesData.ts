@@ -4,6 +4,8 @@ import { canvasDimensions } from "./canvasContext";
 // Helper function to get random number within a range
 const random = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 
+const randomFloat = (min: number, max: number) => Math.random() * (max - min) + min;
+
 // Function to create a random point within canvas bounds
 const randomPoint = (padding: number = 50) => {
   const { width, height } = canvasDimensions;
@@ -17,8 +19,8 @@ const randomPoint = (padding: number = 50) => {
 const randomPointWithin = (padding: number) => {
   const { width, height } = canvasDimensions;
   return {
-    x: random(padding, width - padding),
-    y: random(padding, height - padding),
+    x: randomFloat(padding, width - padding),
+    y: randomFloat(padding, height - padding),
   };
 };
 
@@ -152,6 +154,7 @@ const generateRandomShapes = (createShape: () => Shape): Shape[] => {
 };
 
 let connectDotsCounter = 0;
+let circleInBoxCounter = 0;
 
 const withinBounds = (point: Point, padding: number): boolean => {
   const { width, height } = canvasDimensions;
@@ -201,6 +204,55 @@ const createConnectDotsLine = (): Shape => {
   };
 };
 
+const createCircleInRectangleMinigame = (): Minigame => {
+  const { width, height } = canvasDimensions;
+  const padding = Math.min(width, height) * 0.2;
+
+  const rectWidth = randomFloat(Math.min(width, height) * 0.25, Math.min(width, height) * 0.45);
+  const rectHeight = randomFloat(Math.min(width, height) * 0.2, Math.min(width, height) * 0.4);
+  const halfRectWidth = rectWidth / 2;
+  const halfRectHeight = rectHeight / 2;
+  const center = randomPointWithin(padding + Math.max(halfRectWidth, halfRectHeight));
+
+  const topLeft: Point = { x: center.x - halfRectWidth, y: center.y - halfRectHeight };
+  const topRight: Point = { x: center.x + halfRectWidth, y: center.y - halfRectHeight };
+  const bottomRight: Point = { x: center.x + halfRectWidth, y: center.y + halfRectHeight };
+  const bottomLeft: Point = { x: center.x - halfRectWidth, y: center.y + halfRectHeight };
+
+  const guideRectangle: Shape = {
+    id: `circleBox-guide-${circleInBoxCounter}`,
+    type: "polygon",
+    points: [topLeft, topRight, bottomRight, bottomLeft, topLeft],
+    reward: 0,
+    strokeColor: "#000000",
+    renderOrder: "over",
+  };
+
+  const ellipseShape: Shape = {
+    id: `circleBox-ellipse-${circleInBoxCounter}`,
+    type: "ellipse",
+    center,
+    radiusX: halfRectWidth,
+    radiusY: halfRectHeight,
+    reward: 24,
+    strokeColor: "#bdbdbd",
+  };
+
+  circleInBoxCounter += 1;
+
+  return {
+    id: "m5",
+    name: "Ellipse in the Box",
+    type: "traceShape",
+    shapes: [ellipseShape],
+    guides: [guideRectangle],
+    currentShapeIndex: 0,
+    threshold: 35,
+    totalReward: ellipseShape.reward,
+    transitionLabel: "CIRCLE!",
+  } satisfies Minigame;
+};
+
 // Function to get a fresh set of minigames with random shapes
 export const getRandomMinigames = (): Minigame[] => [
   {
@@ -235,6 +287,7 @@ export const getRandomMinigames = (): Minigame[] => [
       totalReward,
     } satisfies Minigame;
   })(),
+  createCircleInRectangleMinigame(),
   {
     id: "m4",
     name: "Draw the Circles",

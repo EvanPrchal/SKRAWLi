@@ -1,6 +1,6 @@
 // src/TraceCanvas.tsx
 import React, { useRef, useEffect, useState } from "react";
-import type { Point, Shape, PolygonShape } from "./types";
+import type { Point, Shape, PolygonShape, CircleShape, EllipseShape } from "./types";
 import { canvasDimensions } from "./canvasContext";
 import MiniTimer from "./MiniTimer";
 
@@ -10,9 +10,10 @@ interface TraceCanvasProps {
   threshold?: number;
   currentTime: number;
   onComplete: (success: boolean, reward: number) => void;
+  guides?: Shape[];
 }
 
-const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, threshold = 20, currentTime, onComplete }) => {
+const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, threshold = 20, currentTime, onComplete, guides }) => {
   const currentShape = shapes[currentShapeIndex];
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -88,6 +89,61 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
     drawCanvas();
   };
 
+  const drawPolygon = (ctx: CanvasRenderingContext2D, polygon: PolygonShape) => {
+    const pts = polygon.points;
+
+    if (polygon.style === "dots" && pts.length === 2) {
+      const dotRadius = 8;
+      const fill = polygon.strokeColor ?? "#ccc";
+      ctx.fillStyle = fill;
+      pts.forEach((pt) => {
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, dotRadius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      return;
+    }
+
+    if (pts.length === 0) {
+      return;
+    }
+
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) {
+      ctx.lineTo(pts[i].x, pts[i].y);
+    }
+    ctx.strokeStyle = polygon.strokeColor ?? "#ccc";
+    ctx.lineWidth = 4;
+    ctx.stroke();
+  };
+
+  const drawCircle = (ctx: CanvasRenderingContext2D, circle: CircleShape) => {
+    ctx.beginPath();
+    ctx.arc(circle.center.x, circle.center.y, circle.radius, 0, 2 * Math.PI);
+    ctx.strokeStyle = circle.strokeColor ?? "#ccc";
+    ctx.lineWidth = 4;
+    ctx.stroke();
+  };
+
+  const drawEllipse = (ctx: CanvasRenderingContext2D, ellipse: EllipseShape) => {
+    ctx.beginPath();
+    ctx.ellipse(ellipse.center.x, ellipse.center.y, ellipse.radiusX, ellipse.radiusY, ellipse.rotation ?? 0, 0, 2 * Math.PI);
+    ctx.strokeStyle = ellipse.strokeColor ?? "#ccc";
+    ctx.lineWidth = 4;
+    ctx.stroke();
+  };
+
+  const drawShape = (ctx: CanvasRenderingContext2D, shape: Shape) => {
+    if (shape.type === "polygon") {
+      drawPolygon(ctx, shape as PolygonShape);
+    } else if (shape.type === "circle") {
+      drawCircle(ctx, shape as CircleShape);
+    } else if (shape.type === "ellipse") {
+      drawEllipse(ctx, shape as EllipseShape);
+    }
+  };
+
   const drawCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -96,36 +152,15 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
     // clear considering CSS size
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    const underGuides = guides?.filter((shape) => shape.renderOrder !== "over") ?? [];
+    const overGuides = guides?.filter((shape) => shape.renderOrder === "over") ?? [];
+
+    underGuides.forEach((shape) => drawShape(ctx, shape));
+
     // draw current shape
-    if (currentShape.type === "polygon") {
-      const polygon = currentShape as PolygonShape;
-      const pts = polygon.points;
-      if (polygon.style === "dots" && pts.length === 2) {
-        ctx.fillStyle = "#ccc";
-        const dotRadius = 8;
-        pts.forEach((pt) => {
-          ctx.beginPath();
-          ctx.arc(pt.x, pt.y, dotRadius, 0, Math.PI * 2);
-          ctx.fill();
-        });
-      } else if (pts.length > 0) {
-        ctx.beginPath();
-        ctx.moveTo(pts[0].x, pts[0].y);
-        for (let i = 1; i < pts.length; i++) {
-          ctx.lineTo(pts[i].x, pts[i].y);
-        }
-        ctx.strokeStyle = "#ccc";
-        ctx.lineWidth = 4;
-        ctx.stroke();
-      }
-    } else if (currentShape.type === "circle") {
-      const circ = currentShape as any;
-      ctx.beginPath();
-      ctx.arc(circ.center.x, circ.center.y, circ.radius, 0, 2 * Math.PI);
-      ctx.strokeStyle = "#ccc";
-      ctx.lineWidth = 4;
-      ctx.stroke();
-    }
+    drawShape(ctx, currentShape);
+
+    overGuides.forEach((shape) => drawShape(ctx, shape));
 
     // draw user path
     const up = userPointsRef.current;
@@ -149,7 +184,7 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
       window.removeEventListener("resize", updateCanvasSize);
       window.removeEventListener("scroll", updateCanvasSize);
     };
-  }, [shapes, currentShapeIndex]);
+  }, [shapes, currentShapeIndex, guides]);
 
   return (
     <div className="relative w-full h-full">
@@ -251,8 +286,8 @@ function evaluateTrace(userPts: Point[], shape: Shape, threshold: number): boole
     // Check if enough of the shape has been covered (70%)
     return coveredLength / totalShapeLength >= 0.7;
   } else if (shape.type === "circle") {
-    const circ = shape as any;
-    const { center, radius } = circ;
+    const circle = shape as CircleShape;
+    const { center, radius } = circle;
 
     // Track angular coverage
     const anglesCovered = new Set<number>();
@@ -271,6 +306,26 @@ function evaluateTrace(userPts: Point[], shape: Shape, threshold: number): boole
     }
 
     // Check if enough of the circle has been traced (70% of 360 degrees = 252 degrees)
+    return anglesCovered.size * 5 >= 252;
+  } else if (shape.type === "ellipse") {
+    const ellipse = shape as EllipseShape;
+    const { center, radiusX, radiusY } = ellipse;
+
+    const anglesCovered = new Set<number>();
+    const maxRadius = Math.max(radiusX, radiusY);
+    const normalizedThreshold = threshold / maxRadius;
+
+    for (const up of userPts) {
+      const dx = up.x - center.x;
+      const dy = up.y - center.y;
+      const normalizedDistance = Math.sqrt((dx * dx) / (radiusX * radiusX) + (dy * dy) / (radiusY * radiusY));
+
+      if (Math.abs(normalizedDistance - 1) <= normalizedThreshold) {
+        const angle = Math.round((((Math.atan2(dy, dx) * 180) / Math.PI + 360) % 360) / 5) * 5;
+        anglesCovered.add(angle);
+      }
+    }
+
     return anglesCovered.size * 5 >= 252;
   }
 

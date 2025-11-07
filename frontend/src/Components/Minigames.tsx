@@ -141,7 +141,7 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
 
   if (showTransition) {
     const upcoming = pendingMinigame ?? currentMinigame;
-    const transitionLabel = upcoming.name.toLowerCase().includes("connect") ? "Connect!" : "Trace!";
+    const transitionLabel = upcoming.transitionLabel ?? (upcoming.name.toLowerCase().includes("connect") ? "Connect!" : "Trace!");
     return (
       <div className="w-full h-full flex items-center justify-center">
         <div className="text-logotype font-logotype text-skrawl-purple">{transitionLabel}</div>
@@ -157,6 +157,7 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
         threshold={currentMinigame.threshold}
         currentTime={timeLeft}
         onComplete={handleComplete}
+        guides={currentMinigame.guides}
       />
     </div>
   );
