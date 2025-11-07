@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import type { Minigame } from "./types";
 import { getRandomMinigames } from "./minigamesData";
 import TraceCanvas from "./TraceCanvas";
@@ -8,27 +8,29 @@ interface MinigamesProps {
   onGameOver: () => void;
   onTimeUpdate: (time: number) => void;
   initialTime?: number;
+  devMode?: boolean;
 }
 
 const MINIGAME_TIME = 10; // default seconds per minigame
 
-const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpdate, initialTime }) => {
+const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpdate, initialTime, devMode = false }) => {
   // Function to get a random minigame
-  const getRandomMinigame = () => {
+  const getRandomMinigame = useCallback(() => {
     const randomMinigames = getRandomMinigames();
     const randomIndex = Math.floor(Math.random() * randomMinigames.length);
     return randomMinigames[randomIndex];
-  };
+  }, []);
 
   const [currentMinigame, setCurrentMinigame] = useState<Minigame>(getRandomMinigame());
   const [showTransition, setShowTransition] = useState(false);
   const [timeLeft, setTimeLeft] = useState(initialTime ?? MINIGAME_TIME);
   const [timerActive, setTimerActive] = useState(false);
   const [countdownValue, setCountdownValue] = useState<string>("3");
+  const [pendingMinigame, setPendingMinigame] = useState<Minigame | null>(null);
 
   // Timer effect
   useEffect(() => {
-    if (!timerActive || showTransition) return;
+    if (!timerActive || showTransition || devMode) return;
 
     if (timeLeft <= 0) {
       onGameOver();
@@ -44,7 +46,7 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, timerActive, showTransition, onGameOver, onTimeUpdate]);
+  }, [timeLeft, timerActive, showTransition, onGameOver, onTimeUpdate, devMode]);
 
   // If the parent changes the initialTime (e.g. difficulty changed), update the timer
   useEffect(() => {
@@ -83,17 +85,19 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
   useEffect(() => {
     if (showTransition) {
       setTimerActive(false);
-      // Show "Trace" for 1.5 seconds before starting the next minigame
       const timer = setTimeout(() => {
+        const nextMinigame = pendingMinigame ?? getRandomMinigame();
+        setCurrentMinigame(nextMinigame);
+        setPendingMinigame(null);
         setShowTransition(false);
         const nextTime = initialTime ?? MINIGAME_TIME;
-        setTimeLeft(nextTime); // Reset timer for next minigame
+        setTimeLeft(nextTime);
         onTimeUpdate(nextTime);
         setTimerActive(true);
       }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [showTransition, initialTime, onTimeUpdate]);
+  }, [showTransition, pendingMinigame, initialTime, onTimeUpdate, getRandomMinigame]);
 
   const handleComplete = (success: boolean, reward: number) => {
     void reward; // reward included for API parity; rewards are handled when a minigame finishes
@@ -104,13 +108,10 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
 
       if (nextShapeIndex >= currentMinigame.shapes.length) {
         // All shapes in current minigame completed
+        const nextGame = getRandomMinigame();
+        setPendingMinigame(nextGame);
         setShowTransition(true); // Show transition screen
         onComplete(true, currentMinigame.totalReward); // Award total reward for completing all shapes
-
-        // Move to a random minigame after showing transition
-        setTimeout(() => {
-          setCurrentMinigame(getRandomMinigame());
-        }, 1500);
       } else {
         // Move to next shape in current minigame
         setCurrentMinigame((prev) => ({
@@ -139,9 +140,11 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
   }
 
   if (showTransition) {
+    const upcoming = pendingMinigame ?? currentMinigame;
+    const transitionLabel = upcoming.name.toLowerCase().includes("connect") ? "Connect!" : "Trace!";
     return (
       <div className="w-full h-full flex items-center justify-center">
-        <div className="text-logotype font-logotype text-skrawl-purple">Trace!</div>
+        <div className="text-logotype font-logotype text-skrawl-purple">{transitionLabel}</div>
       </div>
     );
   }

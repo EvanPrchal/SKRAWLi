@@ -1,6 +1,6 @@
 // src/TraceCanvas.tsx
 import React, { useRef, useEffect, useState } from "react";
-import type { Point, Shape } from "./types";
+import type { Point, Shape, PolygonShape } from "./types";
 import { canvasDimensions } from "./canvasContext";
 import MiniTimer from "./MiniTimer";
 
@@ -98,8 +98,17 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
 
     // draw current shape
     if (currentShape.type === "polygon") {
-      const pts = (currentShape as any).points as Point[];
-      if (pts.length > 0) {
+      const polygon = currentShape as PolygonShape;
+      const pts = polygon.points;
+      if (polygon.style === "dots" && pts.length === 2) {
+        ctx.fillStyle = "#ccc";
+        const dotRadius = 8;
+        pts.forEach((pt) => {
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, dotRadius, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      } else if (pts.length > 0) {
         ctx.beginPath();
         ctx.moveTo(pts[0].x, pts[0].y);
         for (let i = 1; i < pts.length; i++) {

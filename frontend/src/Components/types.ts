@@ -9,6 +9,7 @@ export type PolygonShape = {
   type: "polygon";
   points: Point[];
   reward: number;
+  style?: "default" | "dots";
 };
 
 export type CircleShape = {

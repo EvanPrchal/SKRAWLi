@@ -1,4 +1,4 @@
-import type { Minigame, Shape } from "./types";
+import type { Minigame, Point, Shape } from "./types";
 import { canvasDimensions } from "./canvasContext";
 
 // Helper function to get random number within a range
@@ -78,6 +78,56 @@ const generateRandomShapes = (createShape: () => Shape): Shape[] => {
   return Array.from({ length: count }, () => createShape());
 };
 
+let connectDotsCounter = 0;
+
+const withinBounds = (point: Point, padding: number): boolean => {
+  const { width, height } = canvasDimensions;
+  return point.x >= padding && point.x <= width - padding && point.y >= padding && point.y <= height - padding;
+};
+
+const createConnectDotsLine = (): Shape => {
+  const { width, height } = canvasDimensions;
+  const padding = Math.min(width, height) * 0.15;
+  const maxLength = Math.min(width, height) * 0.35;
+  const minLength = Math.min(width, height) * 0.18;
+
+  let start = randomPoint(padding);
+  let end: Point | null = null;
+  let attempts = 0;
+
+  while (attempts < 12) {
+    const length = random(minLength, maxLength);
+    const angle = Math.random() * Math.PI * 2;
+    const candidateEnd: Point = {
+      x: start.x + Math.cos(angle) * length,
+      y: start.y + Math.sin(angle) * length,
+    };
+
+    if (withinBounds(candidateEnd, padding)) {
+      end = candidateEnd;
+      break;
+    }
+
+    start = randomPoint(padding);
+    attempts += 1;
+  }
+
+  if (!end) {
+    end = {
+      x: Math.min(Math.max(start.x + maxLength, padding), width - padding),
+      y: Math.min(Math.max(start.y, padding), height - padding),
+    };
+  }
+
+  return {
+    id: `connectDots-${connectDotsCounter++}`,
+    type: "polygon" as const,
+    points: [start, end],
+    reward: 8,
+    style: "dots",
+  };
+};
+
 // Function to get a fresh set of minigames with random shapes
 export const getRandomMinigames = (): Minigame[] => [
   {
@@ -98,6 +148,20 @@ export const getRandomMinigames = (): Minigame[] => [
     threshold: 40,
     totalReward: 15,
   },
+  (() => {
+    const shapeCount = random(1, 3);
+    const shapes = Array.from({ length: shapeCount }, () => createConnectDotsLine());
+    const totalReward = shapes.reduce((sum, shape) => sum + shape.reward, 0);
+    return {
+      id: "m3",
+      name: "Connect the Dots",
+      type: "traceShape" as const,
+      shapes,
+      currentShapeIndex: 0,
+      threshold: 30,
+      totalReward,
+    } satisfies Minigame;
+  })(),
   {
     id: "m4",
     name: "Draw the Circles",

@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useAuth0, withAuthenticationRequired } from "@auth0/auth0-react";
 import Loading from "./Components/Loading";
 import Minigames from "./Components/Minigames";
-import Redirecting from "./Components/Redirecting";
 
 const timeForDifficulty = (level: string): number => {
   switch (level) {
@@ -23,6 +22,13 @@ const readDifficultyLevel = (): string => {
   return localStorage.getItem("difficultyLevel") || "normal";
 };
 
+const readDevMode = (): boolean => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  return localStorage.getItem("devMode") === "true";
+};
+
 const Run = () => {
   const { user, isLoading } = useAuth0();
   const [started, setStarted] = useState<boolean>(false);
@@ -31,6 +37,7 @@ const Run = () => {
   const [lives, setLives] = useState<number>(3);
   const [configuredMinigameTime, setConfiguredMinigameTime] = useState<number>(() => timeForDifficulty(readDifficultyLevel()));
   const [timeRemaining, setTimeRemaining] = useState<number>(() => timeForDifficulty(readDifficultyLevel()));
+  const [devMode, setDevMode] = useState<boolean>(() => readDevMode());
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -43,6 +50,9 @@ const Run = () => {
     const onSettings = (e: Event) => {
       const detail = (e as CustomEvent).detail || {};
       const level = detail.difficultyLevel || readDifficultyLevel();
+      const devModeSetting = detail.devMode ?? readDevMode();
+      setDevMode(!!devModeSetting);
+
       const nextTime = timeForDifficulty(level);
       setConfiguredMinigameTime(nextTime);
       setTimeRemaining(nextTime);
@@ -56,9 +66,15 @@ const Run = () => {
     if (success) {
       setCoins((c) => c + reward);
     } else {
-      setLives((l) => l - 1);
-      if (lives <= 1) {
-        setGameOver(true);
+      if (!devMode) {
+        setLives((l) => {
+          const nextLives = l - 1;
+          if (nextLives <= 0) {
+            setGameOver(true);
+            return 0;
+          }
+          return nextLives;
+        });
       }
     }
   };
@@ -105,9 +121,14 @@ const Run = () => {
           <div className="w-full h-full relative">
             <Minigames
               onComplete={handleComplete}
-              onGameOver={() => setGameOver(true)}
+              onGameOver={() => {
+                if (!devMode) {
+                  setGameOver(true);
+                }
+              }}
               onTimeUpdate={setTimeRemaining}
               initialTime={configuredMinigameTime}
+              devMode={devMode}
             />
           </div>
         ) : (
@@ -126,5 +147,5 @@ const Run = () => {
 };
 
 export default withAuthenticationRequired(Run, {
-  onRedirecting: () => <Redirecting />,
+  onRedirecting: () => <Loading />,
 });

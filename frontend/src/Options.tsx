@@ -7,18 +7,36 @@ const Options = () => {
   const { isLoading } = useAuth0();
   const navigate = useNavigate();
 
-  const [difficultyLevel, setDifficultyLevel] = useState("normal");
-  const [sfxVolume, setSfxVolume] = useState(50);
-  const [musicVolume, setMusicVolume] = useState(50);
-  const [showTimer, setShowTimer] = useState(true);
+  const readFromStorage = <T,>(key: string, fallback: T, mapper: (value: string) => T): T => {
+    if (typeof window === "undefined") return fallback;
+    const stored = localStorage.getItem(key);
+    return stored !== null ? mapper(stored) : fallback;
+  };
+
+  const [difficultyLevel, setDifficultyLevel] = useState(() => readFromStorage("difficultyLevel", "normal", (v) => v));
+  const [sfxVolume, setSfxVolume] = useState(() =>
+    readFromStorage("sfxVolume", 50, (v) => {
+      const parsed = Number(v);
+      return Number.isNaN(parsed) ? 50 : parsed;
+    })
+  );
+  const [musicVolume, setMusicVolume] = useState(() =>
+    readFromStorage("musicVolume", 50, (v) => {
+      const parsed = Number(v);
+      return Number.isNaN(parsed) ? 50 : parsed;
+    })
+  );
+  const [showTimer, setShowTimer] = useState(() => readFromStorage("showTimer", true, (v) => v === "true"));
+  const [devMode, setDevMode] = useState(() => readFromStorage("devMode", false, (v) => v === "true"));
 
   const handleSaveSettings = () => {
     localStorage.setItem("showTimer", showTimer.toString());
     localStorage.setItem("difficultyLevel", difficultyLevel);
     localStorage.setItem("sfxVolume", sfxVolume.toString());
     localStorage.setItem("musicVolume", musicVolume.toString());
+    localStorage.setItem("devMode", devMode.toString());
     // Broadcast settings update so other components can react
-    window.dispatchEvent(new CustomEvent("settingsUpdated", { detail: { difficultyLevel, showTimer } }));
+    window.dispatchEvent(new CustomEvent("settingsUpdated", { detail: { difficultyLevel, showTimer, devMode } }));
     console.log("Settings saved:", {
       difficultyLevel,
       sfxVolume,
@@ -95,6 +113,20 @@ const Options = () => {
                   <div
                     className={`w-4 h-4 rounded-full bg-white transform transition-transform duration-200 ease-in-out ${
                       showTimer ? "translate-x-7" : "translate-x-1"
+                    }`}
+                  />
+                </button>
+              </div>
+              {/* Dev Mode Toggle */}
+              <div className="flex items-center justify-between">
+                <label className="text-body font-body text-skrawl-purple">Developer Mode</label>
+                <button
+                  onClick={() => setDevMode(!devMode)}
+                  className={`w-12 h-6 rounded-full transition-colors duration-200 ease-in-out ${devMode ? "bg-skrawl-cyan" : "bg-gray-300"}`}
+                >
+                  <div
+                    className={`w-4 h-4 rounded-full bg-white transform transition-transform duration-200 ease-in-out ${
+                      devMode ? "translate-x-7" : "translate-x-1"
                     }`}
                   />
                 </button>
