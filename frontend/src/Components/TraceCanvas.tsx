@@ -119,17 +119,21 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
   };
 
   const drawCircle = (ctx: CanvasRenderingContext2D, circle: CircleShape) => {
+    const strokeColor = circle.strokeColor ?? "#ccc";
+    if (strokeColor === "transparent") return; // Skip drawing if transparent
     ctx.beginPath();
     ctx.arc(circle.center.x, circle.center.y, circle.radius, 0, 2 * Math.PI);
-    ctx.strokeStyle = circle.strokeColor ?? "#ccc";
+    ctx.strokeStyle = strokeColor;
     ctx.lineWidth = 4;
     ctx.stroke();
   };
 
   const drawEllipse = (ctx: CanvasRenderingContext2D, ellipse: EllipseShape) => {
+    const strokeColor = ellipse.strokeColor ?? "#ccc";
+    if (strokeColor === "transparent") return; // Skip drawing if transparent
     ctx.beginPath();
     ctx.ellipse(ellipse.center.x, ellipse.center.y, ellipse.radiusX, ellipse.radiusY, ellipse.rotation ?? 0, 0, 2 * Math.PI);
-    ctx.strokeStyle = ellipse.strokeColor ?? "#ccc";
+    ctx.strokeStyle = strokeColor;
     ctx.lineWidth = 4;
     ctx.stroke();
   };

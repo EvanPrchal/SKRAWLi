@@ -228,6 +228,55 @@ const createCircleInRectangleMinigame = (): Minigame => {
     renderOrder: "over",
   };
 
+  // Create 4 marker dots at the cardinal points of the ellipse
+  const markerRadius = 6;
+  const topMarker: Point = { x: center.x, y: center.y - halfRectHeight };
+  const bottomMarker: Point = { x: center.x, y: center.y + halfRectHeight };
+  const leftMarker: Point = { x: center.x - halfRectWidth, y: center.y };
+  const rightMarker: Point = { x: center.x + halfRectWidth, y: center.y };
+
+  // Create small circle shapes for each marker
+  const topMarkerShape: Shape = {
+    id: `circleBox-marker-top-${circleInBoxCounter}`,
+    type: "circle",
+    center: topMarker,
+    radius: markerRadius,
+    reward: 0,
+    strokeColor: "#000000",
+    renderOrder: "over",
+  };
+
+  const bottomMarkerShape: Shape = {
+    id: `circleBox-marker-bottom-${circleInBoxCounter}`,
+    type: "circle",
+    center: bottomMarker,
+    radius: markerRadius,
+    reward: 0,
+    strokeColor: "#000000",
+    renderOrder: "over",
+  };
+
+  const leftMarkerShape: Shape = {
+    id: `circleBox-marker-left-${circleInBoxCounter}`,
+    type: "circle",
+    center: leftMarker,
+    radius: markerRadius,
+    reward: 0,
+    strokeColor: "#000000",
+    renderOrder: "over",
+  };
+
+  const rightMarkerShape: Shape = {
+    id: `circleBox-marker-right-${circleInBoxCounter}`,
+    type: "circle",
+    center: rightMarker,
+    radius: markerRadius,
+    reward: 0,
+    strokeColor: "#000000",
+    renderOrder: "over",
+  };
+
+  // Ellipse shape to trace (invisible - no strokeColor renders it invisible)
   const ellipseShape: Shape = {
     id: `circleBox-ellipse-${circleInBoxCounter}`,
     type: "ellipse",
@@ -235,7 +284,7 @@ const createCircleInRectangleMinigame = (): Minigame => {
     radiusX: halfRectWidth,
     radiusY: halfRectHeight,
     reward: 24,
-    strokeColor: "#bdbdbd",
+    strokeColor: "transparent",
   };
 
   circleInBoxCounter += 1;
@@ -245,7 +294,7 @@ const createCircleInRectangleMinigame = (): Minigame => {
     name: "Ellipse in the Box",
     type: "traceShape",
     shapes: [ellipseShape],
-    guides: [guideRectangle],
+    guides: [guideRectangle, topMarkerShape, bottomMarkerShape, leftMarkerShape, rightMarkerShape],
     currentShapeIndex: 0,
     threshold: 35,
     totalReward: ellipseShape.reward,
