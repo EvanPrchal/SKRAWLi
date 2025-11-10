@@ -291,7 +291,7 @@ const createCircleInRectangleMinigame = (): Minigame => {
 
   return {
     id: "m5",
-    name: "Ellipse in the Box",
+    name: "Ghosted Ellipse in Planes",
     type: "traceShape",
     shapes: [ellipseShape],
     guides: [guideRectangle, topMarkerShape, bottomMarkerShape, leftMarkerShape, rightMarkerShape],
@@ -315,7 +315,7 @@ export const getRandomMinigames = (): Minigame[] => [
   },
   {
     id: "m2",
-    name: "Squares",
+    name: "Trace Squares",
     type: "traceShape",
     shapes: generateRandomShapes(createRandomSquare),
     currentShapeIndex: 0,
@@ -339,7 +339,7 @@ export const getRandomMinigames = (): Minigame[] => [
   createCircleInRectangleMinigame(),
   {
     id: "m4",
-    name: "Ellipses in Planes",
+    name: "Trace Circles",
     type: "traceShape",
     shapes: generateRandomShapes(createRandomCircle),
     currentShapeIndex: 0,
