@@ -7,11 +7,11 @@ function Home() {
       <div className="w-4/6 bg-skrawl-white">
         <section className="text-header font-header text-skrawl-purple flex flex-col justify-around items-center h-full">
           <h1 className="text-logotype font-logotype text-skrawl-purple  underline">SKRAWLi</h1>
-          <Link to="/continue">
-            <p className="hover:text-skrawl-magenta">Continue</p>
-          </Link>
           <Link to="/run">
             <p className="hover:text-skrawl-magenta">Start Run</p>
+          </Link>
+          <Link to="/minigameselect">
+            <p className="hover:text-skrawl-magenta">Minigame Select</p>
           </Link>
           <Link to="/shop">
             <p className="hover:text-skrawl-magenta">Shop</p>

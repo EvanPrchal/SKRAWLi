@@ -9,11 +9,12 @@ interface MinigamesProps {
   onTimeUpdate: (time: number) => void;
   initialTime?: number;
   devMode?: boolean;
+  specificMinigame?: Minigame; // Optional: start with a specific minigame
 }
 
 const MINIGAME_TIME = 10; // default seconds per minigame
 
-const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpdate, initialTime, devMode = false }) => {
+const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpdate, initialTime, devMode = false, specificMinigame }) => {
   // Function to get a random minigame
   const getRandomMinigame = useCallback(() => {
     const randomMinigames = getRandomMinigames();
@@ -21,7 +22,7 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
     return randomMinigames[randomIndex];
   }, []);
 
-  const [currentMinigame, setCurrentMinigame] = useState<Minigame>(getRandomMinigame());
+  const [currentMinigame, setCurrentMinigame] = useState<Minigame>(specificMinigame ?? getRandomMinigame());
   const [showTransition, setShowTransition] = useState(false);
   const [timeLeft, setTimeLeft] = useState(initialTime ?? MINIGAME_TIME);
   const [timerActive, setTimerActive] = useState(false);
@@ -108,7 +109,14 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
 
       if (nextShapeIndex >= currentMinigame.shapes.length) {
         // All shapes in current minigame completed
-        const nextGame = getRandomMinigame();
+        // If specificMinigame is provided, generate a new instance of the same type
+        const nextGame = specificMinigame
+          ? (() => {
+              const currentType = currentMinigame.id;
+              const randomMinigames = getRandomMinigames();
+              return randomMinigames.find((m) => m.id === currentType) || getRandomMinigame();
+            })()
+          : getRandomMinigame();
         setPendingMinigame(nextGame);
         setShowTransition(true); // Show transition screen
         onComplete(true, currentMinigame.totalReward); // Award total reward for completing all shapes

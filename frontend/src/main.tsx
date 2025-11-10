@@ -5,6 +5,7 @@ import { Auth0Provider } from "@auth0/auth0-react";
 import "./index.css";
 import Home from "./Home.tsx";
 import Run from "./Run.tsx";
+import MinigameSelect from "./MinigameSelect.tsx";
 import Profile from "./Profile.tsx";
 import Credits from "./Credits.tsx";
 import Options from "./Options.tsx";
@@ -22,6 +23,7 @@ createRoot(document.getElementById("root")!).render(
           <Route path="/" element={<Home />} />
           <Route path="/run" element={<Run />} />
           <Route path="/continue" element={<Run />} />
+          <Route path="/minigameselect" element={<MinigameSelect />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/credits" element={<Credits />} />
           <Route path="/options" element={<Options />} />

@@ -306,7 +306,7 @@ const createCircleInRectangleMinigame = (): Minigame => {
 export const getRandomMinigames = (): Minigame[] => [
   {
     id: "m1",
-    name: "Trace the Lines",
+    name: "Straight Lines",
     type: "traceShape",
     shapes: generateRandomShapes(createRandomLine),
     currentShapeIndex: 0,
@@ -315,7 +315,7 @@ export const getRandomMinigames = (): Minigame[] => [
   },
   {
     id: "m2",
-    name: "Draw the Squares",
+    name: "Squares",
     type: "traceShape",
     shapes: generateRandomShapes(createRandomSquare),
     currentShapeIndex: 0,
@@ -328,7 +328,7 @@ export const getRandomMinigames = (): Minigame[] => [
     const totalReward = shapes.reduce((sum, shape) => sum + shape.reward, 0);
     return {
       id: "m3",
-      name: "Connect the Dots",
+      name: "Ghosted Lines",
       type: "traceShape" as const,
       shapes,
       currentShapeIndex: 0,
@@ -339,7 +339,7 @@ export const getRandomMinigames = (): Minigame[] => [
   createCircleInRectangleMinigame(),
   {
     id: "m4",
-    name: "Draw the Circles",
+    name: "Ellipses in Planes",
     type: "traceShape",
     shapes: generateRandomShapes(createRandomCircle),
     currentShapeIndex: 0,
