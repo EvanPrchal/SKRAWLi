@@ -2,6 +2,7 @@ import { useAuth0, withAuthenticationRequired } from "@auth0/auth0-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Loading from "./Components/Loading";
+import NavigationHeader from "./Components/NavigationHeader";
 
 const Options = () => {
   const { isLoading } = useAuth0();
@@ -52,7 +53,8 @@ const Options = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-skrawl-black bg-[url('/src/assets/images/subtle-texture.png')] bg-cover">
+    <div className="flex flex-col h-screen bg-skrawl-black bg-[url('/src/assets/images/background.png')] bg-cover">
+      <NavigationHeader />
       <div className="flex flex-col items-center justify-center p-8">
         <h1 className="text-logotype font-logotype text-skrawl-purple text-4xl mb-8">Options</h1>
 

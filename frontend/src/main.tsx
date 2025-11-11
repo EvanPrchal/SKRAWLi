@@ -9,6 +9,7 @@ import MinigameSelect from "./MinigameSelect.tsx";
 import Profile from "./Profile.tsx";
 import Credits from "./Credits.tsx";
 import Options from "./Options.tsx";
+import Shop from "./Shop.tsx";
 createRoot(document.getElementById("root")!).render(
   <Auth0Provider
     domain="dev-v0mmlcufmyjsq8l7.us.auth0.com"
@@ -27,6 +28,7 @@ createRoot(document.getElementById("root")!).render(
           <Route path="/profile" element={<Profile />} />
           <Route path="/credits" element={<Credits />} />
           <Route path="/options" element={<Options />} />
+          <Route path="/shop" element={<Shop />} />
         </Routes>
       </BrowserRouter>
     </StrictMode>

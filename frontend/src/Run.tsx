@@ -3,6 +3,7 @@ import { useAuth0, withAuthenticationRequired } from "@auth0/auth0-react";
 import Loading from "./Components/Loading";
 import Minigames from "./Components/Minigames";
 import GameplayLayout from "./Components/GameplayLayout";
+import { Link } from "react-router-dom";
 
 const timeForDifficulty = (level: string): number => {
   switch (level) {
@@ -101,10 +102,16 @@ const Run = () => {
   return (
     <GameplayLayout lives={lives} timeRemaining={timeRemaining} userImage={user?.picture} userName={user?.name}>
       {!started ? (
-        <div className="flex flex-col h-full justify-around items-center">
-          <button onClick={handleStart} className="text-logotype font-logotype text-skrawl-purple hover:cursor-pointer hover:text-skrawl-magenta">
+        <div className="flex flex-col h-full justify-center items-center gap-4">
+          <button
+            onClick={handleStart}
+            className="text-logotype font-logotype text-skrawl-purple hover:cursor-pointer hover:text-skrawl-magenta transition-colors"
+          >
             Start Game
           </button>
+          <Link to="/" className="text-body font-body text-skrawl-purple hover:text-skrawl-magenta transition-colors">
+            Back to Home
+          </Link>
         </div>
       ) : !gameOver ? (
         <div className="w-full h-full relative">
@@ -125,7 +132,7 @@ const Run = () => {
           <h2 className="text-logotype font-logotype">Game Over!</h2>
           <section></section>
           <p>Coins earned: {coins}</p>
-          <button onClick={handleStartOver} className="text-skrawl-purple hover:text-skrawl-magenta pt-2">
+          <button onClick={handleStartOver} className="text-skrawl-purple hover:text-skrawl-magenta transition-colors pt-2">
             Play Again
           </button>
         </div>

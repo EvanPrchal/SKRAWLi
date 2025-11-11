@@ -5,6 +5,7 @@ import Minigames from "./Components/Minigames";
 import GameplayLayout from "./Components/GameplayLayout";
 import { getRandomMinigames } from "./Components/minigamesData";
 import type { Minigame } from "./Components/types";
+import { Link } from "react-router-dom";
 
 const timeForDifficulty = (level: string): number => {
   switch (level) {
@@ -109,14 +110,14 @@ const MinigameSelect = () => {
                 onClick={() => handleMinigameSelect(minigame)}
                 className="bg-skrawl-purple text-skrawl-white p-6 rounded-lg hover:bg-skrawl-magenta transition-colors font-body text-body"
               >
-                <h3 className="font-header text-lg mb-2">{minigame.name}</h3>
+                <h3 className="font-header text-body mb-2">{minigame.name}</h3>
                 <p className="text-sm">Reward: {minigame.totalReward} coins</p>
               </button>
             ))}
           </div>
-          <button onClick={() => window.history.back()} className="text-body font-body text-skrawl-purple hover:text-skrawl-magenta">
+          <Link to="/" className="text-body font-body text-skrawl-purple hover:text-skrawl-magenta transition-colors">
             Back to Home
-          </button>
+          </Link>
         </div>
       ) : !gameOver ? (
         <div className="w-full h-full relative">
@@ -137,7 +138,7 @@ const MinigameSelect = () => {
         <div className="game-over h-full flex flex-col items-center justify-center text-body font-body text-skrawl-purple">
           <h2 className="text-logotype font-logotype">Game Over!</h2>
           <p>Coins earned: {coins}</p>
-          <button onClick={handleBackToSelect} className="text-skrawl-purple hover:text-skrawl-magenta pt-2">
+          <button onClick={handleBackToSelect} className="text-skrawl-purple hover:text-skrawl-magenta transition-colors pt-2">
             Back to Selection
           </button>
         </div>

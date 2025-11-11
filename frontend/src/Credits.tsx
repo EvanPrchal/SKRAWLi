@@ -1,21 +1,47 @@
 import { randomizeColor } from "./Components/utils";
+import NavigationHeader from "./Components/NavigationHeader";
 
 const Credits = () => {
   let bgColor: string = randomizeColor();
   return (
-    <div className={`h-screen flex flex-col items-center gap-[5%] ${bgColor} text-skrawl-white bg-cover bg-[url(/src/assets/images/background.png)]`}>
-      <h1 className="text-logotype font-logotype">Credits</h1>
-      <section className="text-header font-header flex flex-col items-center">
-        Lead Developer<hr className="w-full"></hr> <h2 className="text-header font-header">Evan Prchal</h2>
-      </section>
-      <section className="text-header font-header flex flex-col items-center">
-        Lead Artist <hr className="w-full"></hr>
-        <h2 className="text-header font-header">Morgan Myers</h2>
-      </section>
-      <section className="text-header font-header flex flex-col items-center">
-        Doodle Background <hr className="w-full"></hr>
-        <h2 className="text-header font-header">superwerehog990</h2>
-      </section>
+    <div className={`flex flex-col min-h-screen w-full ${bgColor} text-skrawl-white bg-cover bg-center bg-[url(/src/assets/images/background.png)]`}>
+      <NavigationHeader />
+      <div className="flex flex-col items-center justify-center flex-grow gap-8 py-8">
+        <h1 className="text-logotype font-logotype">Credits</h1>
+        <section className="text-header font-header flex flex-col items-center">
+          Lead Developer<hr className="w-full"></hr> <h2 className="text-button font-body">Evan Prchal</h2>
+        </section>
+        <section className="text-header font-header flex flex-col items-center">
+          Lead Artist <hr className="w-full"></hr>
+          <h2 className="text-button font-body">Morgan Myers</h2>
+        </section>
+        <section className="text-header font-header flex flex-col items-center">
+          Doodle Background <hr className="w-full"></hr>
+          <h2 className="text-button font-body">superwerehog990</h2>
+        </section>
+        <section className="text-header font-header flex flex-col items-center">
+          Main Color Scheme <hr className="w-full"></hr>
+          <h2 className="text-button font-body">Valeria Gonzalez Ramos</h2>
+        </section>
+        <section className="text-header font-header flex flex-col items-center">
+          Inspirations <hr className="w-full"></hr>
+          <h2 className="text-button font-body">Warioware</h2>
+          <a className="text-button font-body hover:text-skrawl-purple transition-colors" href="https://drawabox.com/" target="_blank">
+            Drawabox
+          </a>
+          <h2 className="text-button font-body">Snipperclips</h2>
+          <a className="text-button font-body hover:text-skrawl-purple transition-colors" href="https://wigglypaint.com/en/" target="_blank">
+            Wigglypaint
+          </a>
+          <a
+            className="text-button font-body hover:text-skrawl-purple transition-colors"
+            href="https://store.steampowered.com/app/2741670/MINDWAVE_Demo/"
+            target="_blank"
+          >
+            Mindwave (Check it out its really cool)
+          </a>
+        </section>
+      </div>
     </div>
   );
 };
