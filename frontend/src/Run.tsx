@@ -4,6 +4,7 @@ import Loading from "./Components/Loading";
 import Minigames from "./Components/Minigames";
 import GameplayLayout from "./Components/GameplayLayout";
 import { Link } from "react-router-dom";
+import { useApi } from "./lib/api";
 
 const timeForDifficulty = (level: string): number => {
   switch (level) {
@@ -33,6 +34,7 @@ const readDevMode = (): boolean => {
 
 const Run = () => {
   const { user, isLoading } = useAuth0();
+  const api = useApi();
   const [started, setStarted] = useState<boolean>(false);
   const [coins, setCoins] = useState<number>(0);
   const [gameOver, setGameOver] = useState<boolean>(false);
@@ -67,6 +69,8 @@ const Run = () => {
   const handleComplete = (success: boolean, reward: number) => {
     if (success) {
       setCoins((c) => c + reward);
+      // Save coins to backend
+      api.incrementCoins(reward).catch((err) => console.error("Failed to save coins:", err));
     } else {
       if (!devMode) {
         setLives((l) => {
@@ -128,13 +132,15 @@ const Run = () => {
           />
         </div>
       ) : (
-        <div className="game-over h-full flex flex-col items-center justify-center text-body font-body text-skrawl-purple">
+        <div className="game-over h-full flex flex-col items-center justify-center text-body font-body text-skrawl-purple gap-2">
           <h2 className="text-logotype font-logotype">Game Over!</h2>
-          <section></section>
           <p>Coins earned: {coins}</p>
-          <button onClick={handleStartOver} className="text-skrawl-purple hover:text-skrawl-magenta transition-colors pt-2">
+          <button onClick={handleStartOver} className="text-skrawl-purple hover:text-skrawl-magenta transition-colors">
             Play Again
           </button>
+          <Link to="/" className="text-body font-body text-skrawl-purple hover:text-skrawl-magenta transition-colors">
+            Back to Home
+          </Link>
         </div>
       )}
     </GameplayLayout>

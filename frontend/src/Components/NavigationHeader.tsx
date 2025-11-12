@@ -4,7 +4,7 @@ const NavigationHeader = () => {
   return (
     <nav className="w-full bg-skrawl-purple text-skrawl-white py-4 px-8 sticky top-0">
       <div className="flex justify-between items-center">
-        <Link to="/" className="text-header font-header hover:text-skrawl-magenta transition-colors underline">
+        <Link to="/" className="text-header font-logotype hover:text-skrawl-magenta transition-colors underline">
           SKRAWLi
         </Link>
         <div className="flex gap-6 text-body font-body">

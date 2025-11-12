@@ -41,13 +41,17 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
     const timer = setInterval(() => {
       setTimeLeft((t) => {
         const newTime = t - 1;
-        onTimeUpdate(newTime);
         return newTime;
       });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, timerActive, showTransition, onGameOver, onTimeUpdate, devMode]);
+  }, [timeLeft, timerActive, showTransition, onGameOver, devMode]);
+
+  // Separate effect to notify parent of time changes
+  useEffect(() => {
+    onTimeUpdate(timeLeft);
+  }, [timeLeft, onTimeUpdate]);
 
   // If the parent changes the initialTime (e.g. difficulty changed), update the timer
   useEffect(() => {

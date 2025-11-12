@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import NavigationHeader from "./Components/NavigationHeader";
+import { useApi } from "./lib/api";
+import { useAuth0 } from "@auth0/auth0-react";
 
 type Category = "Brushes" | "Themes" | "Avatars";
 
@@ -23,26 +25,61 @@ const CATALOG: CatalogItem[] = [
 const TABS: Category[] = ["Brushes", "Themes", "Avatars"];
 
 const Shop = () => {
+  const { isLoading } = useAuth0();
+  const api = useApi();
   const [activeTab, setActiveTab] = useState<Category>("Brushes");
-  const [owned, setOwned] = useState<string[]>(() => {
-    const raw = localStorage.getItem("ownedItems");
-    try {
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  });
+  // Use null before data loads to avoid flashing 0
+  const [coins, setCoins] = useState<number | null>(null);
+  const [owned, setOwned] = useState<string[]>([]);
 
+  // Load coins and owned items from backend on mount; use sessionStorage to mitigate flicker on reloads
   useEffect(() => {
-    localStorage.setItem("ownedItems", JSON.stringify(owned));
-  }, [owned]);
+    if (isLoading) return;
+
+    const cachedCoins = sessionStorage.getItem("shop_coins");
+    const cachedOwned = sessionStorage.getItem("shop_owned");
+    if (cachedCoins) setCoins(Number(cachedCoins));
+    if (cachedOwned) {
+      try {
+        setOwned(JSON.parse(cachedOwned));
+      } catch {
+        /* ignore parse errors */
+      }
+    }
+
+    Promise.all([api.getCoins(), api.getOwnedItems()])
+      .then(([coinsData, ownedData]) => {
+        setCoins(coinsData.coins);
+        sessionStorage.setItem("shop_coins", String(coinsData.coins));
+        const ownedIds = ownedData.map((o) => o.item_id);
+        setOwned(ownedIds);
+        sessionStorage.setItem("shop_owned", JSON.stringify(ownedIds));
+      })
+      .catch((err) => console.error("Failed to load shop data:", err));
+  }, [isLoading]);
 
   const items = useMemo(() => CATALOG.filter((i) => i.category === activeTab), [activeTab]);
   const isOwned = (id: string) => owned.includes(id);
+  const canAfford = (price: number) => (coins ?? 0) >= price;
 
-  const handleBuy = (item: CatalogItem) => {
-    if (isOwned(item.id)) return;
-    setOwned((prev) => [...prev, item.id]);
+  const handleBuy = async (item: CatalogItem) => {
+    if (isOwned(item.id) || !canAfford(item.price)) return;
+
+    try {
+      // Deduct coins from backend
+      const result = await api.incrementCoins(-item.price);
+      await api.addOwnedItem(item.id);
+      setCoins(result.coins);
+      setOwned((prev) => {
+        const updated = [...prev, item.id];
+        sessionStorage.setItem("shop_coins", String(result.coins));
+        sessionStorage.setItem("shop_owned", JSON.stringify(updated));
+        return updated;
+      });
+    } catch (err) {
+      console.error("Failed to purchase item:", err);
+      alert("Purchase failed. Please try again.");
+    }
   };
 
   return (
@@ -56,6 +93,15 @@ const Shop = () => {
         <section className="shop-area flex-1 flex flex-col gap-6 p-6">
           <header className="flex items-center justify-between">
             <h1 className="text-logotype font-logotype text-skrawl-white">Shop</h1>
+            <div className="text-header font-header text-skrawl-white">
+              {coins === null ? (
+                <span className="text-accent-cyan/60">Loading...</span>
+              ) : (
+                <>
+                  Coins: <span className="text-accent-cyan">{coins}</span>
+                </>
+              )}
+            </div>
           </header>
 
           {/* Tabs */}
@@ -97,12 +143,16 @@ const Shop = () => {
                       <div className="flex justify-end">
                         <button
                           onClick={() => handleBuy(item)}
-                          disabled={isOwned(item.id)}
+                          disabled={isOwned(item.id) || !canAfford(item.price)}
                           className={`py-2 px-4 rounded-md font-body transition-colors ${
-                            isOwned(item.id) ? "bg-gray-300 text-gray-600 cursor-not-allowed" : "bg-skrawl-purple text-white hover:bg-skrawl-magenta"
+                            isOwned(item.id)
+                              ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                              : canAfford(item.price)
+                              ? "bg-skrawl-purple text-white hover:bg-skrawl-magenta"
+                              : "bg-gray-500/40 text-white/70 cursor-not-allowed"
                           }`}
                         >
-                          {isOwned(item.id) ? "Owned" : "Buy"}
+                          {isOwned(item.id) ? "Owned" : canAfford(item.price) ? "Buy" : "Not enough coins"}
                         </button>
                       </div>
                     </td>

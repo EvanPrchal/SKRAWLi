@@ -12,10 +12,11 @@ import Options from "./Options.tsx";
 import Shop from "./Shop.tsx";
 createRoot(document.getElementById("root")!).render(
   <Auth0Provider
-    domain="dev-v0mmlcufmyjsq8l7.us.auth0.com"
-    clientId="oO9Bl8mHNuo4W6tCMgDErHGfw2pSymZe"
+    domain={import.meta.env.VITE_AUTH0_DOMAIN}
+    clientId={import.meta.env.VITE_AUTH0_CLIENT_ID}
     authorizationParams={{
       redirect_uri: window.location.origin,
+      audience: import.meta.env.VITE_AUTH0_AUDIENCE,
     }}
   >
     <StrictMode>

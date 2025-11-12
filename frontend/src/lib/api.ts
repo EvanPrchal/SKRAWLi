@@ -37,6 +37,20 @@ export function useApi() {
         getAccessTokenSilently
       );
     },
+    async getOwnedItems(): Promise<Array<{ item_id: string; created_at: string }>> {
+      return fetchWithAuth(
+        "/users/me/owned-items",
+        { method: "GET" },
+        getAccessTokenSilently
+      );
+    },
+    async addOwnedItem(item_id: string): Promise<{ item_id: string; created_at: string }> {
+      return fetchWithAuth(
+        "/users/me/owned-items",
+        { method: "POST", body: JSON.stringify({ item_id }) },
+        getAccessTokenSilently
+      );
+    },
   };
 }
 
