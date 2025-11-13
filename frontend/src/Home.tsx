@@ -15,6 +15,9 @@ function Home() {
           <Link to="/minigameselect">
             <p className="hover:text-skrawl-magenta transition-colors">Minigame Select</p>
           </Link>
+          <Link to="/freedraw">
+            <p className="hover:text-skrawl-magenta transition-colors">Free Draw</p>
+          </Link>
           <Link to="/shop">
             <p className="hover:text-skrawl-magenta transition-colors">Shop</p>
           </Link>

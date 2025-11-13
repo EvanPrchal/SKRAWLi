@@ -5,6 +5,7 @@ import { Auth0Provider } from "@auth0/auth0-react";
 import { ThemeProvider } from "./lib/theme.tsx";
 import "./index.css";
 import Home from "./Home.tsx";
+import FreeDraw from "./FreeDraw.tsx";
 import Run from "./Run.tsx";
 import MinigameSelect from "./MinigameSelect.tsx";
 import Profile from "./Profile.tsx";
@@ -32,6 +33,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/credits" element={<Credits />} />
             <Route path="/options" element={<Options />} />
             <Route path="/shop" element={<Shop />} />
+            <Route path="/freedraw" element={<FreeDraw />} />
           </Routes>
         </BrowserRouter>
       </StrictMode>
