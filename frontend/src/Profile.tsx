@@ -1,13 +1,26 @@
 import { useAuth0, withAuthenticationRequired } from "@auth0/auth0-react";
+import { useState, useEffect } from "react";
 import Loading from "./Components/Loading";
 import NavigationHeader from "./Components/NavigationHeader";
 import { Tab } from "@headlessui/react";
 import ProfileInfo from "./Components/ProfileInfo";
 import type { ProfileBadges } from "./Components/ProfileInfo";
 import OwnedBadges from "./Components/OwnedBadges";
+import { useApi } from "./lib/api";
 
 const Profile = () => {
   const { isLoading } = useAuth0();
+  const api = useApi();
+  const [profileBackground, setProfileBackground] = useState<string>("bg-skrawl-black");
+
+  useEffect(() => {
+    if (!isLoading) {
+      api
+        .getProfileBackground()
+        .then((data) => setProfileBackground(data.profile_background || "bg-skrawl-black"))
+        .catch((err) => console.error("Failed to load background:", err));
+    }
+  }, [isLoading]);
 
   if (isLoading) {
     return <Loading />;
@@ -22,7 +35,7 @@ const Profile = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-skrawl-black bg-[url(/src/assets/images/background.png)]">
+    <div className={`flex flex-col h-screen ${profileBackground} bg-[url(/src/assets/images/background.png)] bg-cover`}>
       <NavigationHeader />
       <div className="flex items-center justify-center flex-grow">
         <div className="w-4/6 h-5/6 flex flex-col bg-skrawl-white overflow-hidden">
@@ -39,11 +52,11 @@ const Profile = () => {
                 </Tab>
               ))}
             </Tab.List>
-            <Tab.Panels className="flex-grow flex">
-              <Tab.Panel className="h-full w-full flex items-center justify-center">
-                <ProfileInfo badges={badges} />
+            <Tab.Panels className="flex-grow flex overflow-y-auto">
+              <Tab.Panel className="h-full w-full flex items-center justify-center p-4 overflow-y-auto">
+                <ProfileInfo badges={badges} profileBackground={profileBackground} onBackgroundChange={setProfileBackground} />
               </Tab.Panel>
-              <Tab.Panel className="h-full w-full flex items-center justify-center">
+              <Tab.Panel className="h-full w-full flex items-center justify-center p-4 overflow-y-auto">
                 <OwnedBadges />
               </Tab.Panel>
             </Tab.Panels>

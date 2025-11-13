@@ -3,7 +3,7 @@ import NavigationHeader from "./Components/NavigationHeader";
 import { useApi } from "./lib/api";
 import { useAuth0 } from "@auth0/auth0-react";
 
-type Category = "Brushes" | "Themes" | "Avatars";
+type Category = "Brushes" | "Themes" | "Characters" | "Misc";
 
 type CatalogItem = {
   id: string;
@@ -13,16 +13,9 @@ type CatalogItem = {
   category: Category;
 };
 
-const CATALOG: CatalogItem[] = [
-  { id: "brush-1", name: "Pencil Brush", description: "A light pencil-like stroke.", price: 50, category: "Brushes" },
-  { id: "brush-2", name: "Ink Brush", description: "Sharp inky lines for confident strokes.", price: 120, category: "Brushes" },
-  { id: "theme-1", name: "Neon Theme", description: "Glow up your UI with neon accents.", price: 200, category: "Themes" },
-  { id: "theme-2", name: "Monochrome Theme", description: "Minimal high-contrast theme.", price: 150, category: "Themes" },
-  { id: "avatar-1", name: "Skrawly", description: "A playful new avatar style.", price: 300, category: "Avatars" },
-  { id: "avatar-2", name: "Vector", description: "Sleek geometric avatar.", price: 260, category: "Avatars" },
-];
+const CATALOG: CatalogItem[] = [];
 
-const TABS: Category[] = ["Brushes", "Themes", "Avatars"];
+const TABS: Category[] = ["Brushes", "Themes", "Characters", "Misc"];
 
 const Shop = () => {
   const { isLoading } = useAuth0();

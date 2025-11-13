@@ -51,6 +51,48 @@ export function useApi() {
         getAccessTokenSilently
       );
     },
+    async getBio(): Promise<{ bio: string | null }> {
+      return fetchWithAuth(
+        "/users/me/bio",
+        { method: "GET" },
+        getAccessTokenSilently
+      );
+    },
+    async updateBio(bio: string): Promise<{ bio: string | null }> {
+      return fetchWithAuth(
+        "/users/me/bio",
+        { method: "PUT", body: JSON.stringify({ bio }) },
+        getAccessTokenSilently
+      );
+    },
+    async getDisplayName(): Promise<{ display_name: string | null }> {
+      return fetchWithAuth(
+        "/users/me/display-name",
+        { method: "GET" },
+        getAccessTokenSilently
+      );
+    },
+    async updateDisplayName(display_name: string): Promise<{ display_name: string | null }> {
+      return fetchWithAuth(
+        "/users/me/display-name",
+        { method: "PUT", body: JSON.stringify({ display_name }) },
+        getAccessTokenSilently
+      );
+    },
+    async getProfileBackground(): Promise<{ profile_background: string | null }> {
+      return fetchWithAuth(
+        "/users/me/profile-background",
+        { method: "GET" },
+        getAccessTokenSilently
+      );
+    },
+    async updateProfileBackground(profile_background: string): Promise<{ profile_background: string | null }> {
+      return fetchWithAuth(
+        "/users/me/profile-background",
+        { method: "PUT", body: JSON.stringify({ profile_background }) },
+        getAccessTokenSilently
+      );
+    },
   };
 }
 

@@ -24,6 +24,24 @@ class OwnedItemResponse(BaseModel):
     item_id: str
     created_at: str
 
+class BioResponse(BaseModel):
+    bio: str | None
+
+class UpdateBioRequest(BaseModel):
+    bio: str
+
+class DisplayNameResponse(BaseModel):
+    display_name: str | None
+
+class UpdateDisplayNameRequest(BaseModel):
+    display_name: str
+
+class ProfileBackgroundResponse(BaseModel):
+    profile_background: str | None
+
+class UpdateProfileBackgroundRequest(BaseModel):
+    profile_background: str
+
 @router.get("/users/me/coins", response_model=CoinsResponse)
 async def get_coins(
     current_user: User = Depends(get_current_user),
@@ -83,3 +101,69 @@ async def add_owned_item(
     db.commit()
     db.refresh(owned)
     return OwnedItemResponse(item_id=owned.item_id, created_at=owned.created_at.isoformat())
+
+@router.get("/users/me/bio", response_model=BioResponse)
+async def get_bio(
+    current_user: User = Depends(get_current_user),
+) -> BioResponse:
+    """Get the current user's bio."""
+    return BioResponse(bio=current_user.bio)
+
+@router.put("/users/me/bio", response_model=BioResponse)
+async def update_bio(
+    request: UpdateBioRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> BioResponse:
+    """Update the user's bio."""
+    if len(request.bio) > 500:
+        raise HTTPException(status_code=400, detail="Bio must be 500 characters or less")
+    current_user.bio = request.bio
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+    return BioResponse(bio=current_user.bio)
+
+@router.get("/users/me/display-name", response_model=DisplayNameResponse)
+async def get_display_name(
+    current_user: User = Depends(get_current_user),
+) -> DisplayNameResponse:
+    """Get the current user's display name."""
+    return DisplayNameResponse(display_name=current_user.display_name)
+
+@router.put("/users/me/display-name", response_model=DisplayNameResponse)
+async def update_display_name(
+    request: UpdateDisplayNameRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> DisplayNameResponse:
+    """Update the user's display name."""
+    if len(request.display_name) > 50:
+        raise HTTPException(status_code=400, detail="Display name must be 50 characters or less")
+    if len(request.display_name.strip()) == 0:
+        raise HTTPException(status_code=400, detail="Display name cannot be empty")
+    current_user.display_name = request.display_name
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+    return DisplayNameResponse(display_name=current_user.display_name)
+
+@router.get("/users/me/profile-background", response_model=ProfileBackgroundResponse)
+async def get_profile_background(
+    current_user: User = Depends(get_current_user),
+) -> ProfileBackgroundResponse:
+    """Get the current user's profile background."""
+    return ProfileBackgroundResponse(profile_background=current_user.profile_background)
+
+@router.put("/users/me/profile-background", response_model=ProfileBackgroundResponse)
+async def update_profile_background(
+    request: UpdateProfileBackgroundRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> ProfileBackgroundResponse:
+    """Update the user's profile background."""
+    current_user.profile_background = request.profile_background
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+    return ProfileBackgroundResponse(profile_background=current_user.profile_background)

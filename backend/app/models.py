@@ -9,6 +9,9 @@ class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     auth0_sub: str = Field(unique=True, index=True)
     coins: int = Field(default=0)
+    bio: Optional[str] = Field(default=None, max_length=500)
+    display_name: Optional[str] = Field(default=None, max_length=50)
+    profile_background: Optional[str] = Field(default="bg-skrawl-black", max_length=50)
 
 class OwnedItem(SQLModel, table=True):
     __tablename__ = "owned_items"
