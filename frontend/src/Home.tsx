@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
 import LoginButton from "./Components/LoginButton";
 import LogoutButton from "./Components/LogoutButton";
+// import DebugTokenButton from "./DebugTokenButton";
 function Home() {
   return (
     <div className="flex h-screen bg-skrawl-cyan bg-cover bg-[url(/src/assets/images/background.png)] justify-center">
+      {/* <DebugTokenButton /> */}
       <div className="w-4/6 bg-skrawl-white">
         <section className="text-header font-header text-skrawl-purple flex flex-col justify-around items-center h-full">
           <h1 className="text-logotype font-logotype text-skrawl-purple  underline">SKRAWLi</h1>

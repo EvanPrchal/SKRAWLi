@@ -304,28 +304,33 @@ const createCircleInRectangleMinigame = (): Minigame => {
 
 // Function to get a fresh set of minigames with random shapes
 export const getRandomMinigames = (): Minigame[] => [
-  {
-    id: "m1",
-    name: "Straight Lines",
-    type: "traceShape",
-    shapes: generateRandomShapes(createRandomLine),
-    currentShapeIndex: 0,
-    threshold: 60,
-    totalReward: 5,
-  },
-  {
-    id: "m2",
-    name: "Trace Squares",
-    type: "traceShape",
-    shapes: generateRandomShapes(createRandomSquare),
-    currentShapeIndex: 0,
-    threshold: 40,
-    totalReward: 15,
-  },
+  (() => {
+    const shapes = generateRandomShapes(createRandomLine);
+    return {
+      id: "m1",
+      name: "Straight Lines",
+      type: "traceShape",
+      shapes,
+      currentShapeIndex: 0,
+      threshold: 60,
+      totalReward: 10,
+    } satisfies Minigame;
+  })(),
+  (() => {
+    const shapes = generateRandomShapes(createRandomSquare);
+    return {
+      id: "m2",
+      name: "Trace Squares",
+      type: "traceShape",
+      shapes,
+      currentShapeIndex: 0,
+      threshold: 40,
+      totalReward: 20,
+    } satisfies Minigame;
+  })(),
   (() => {
     const shapeCount = random(1, 3);
     const shapes = Array.from({ length: shapeCount }, () => createConnectDotsLine());
-    const totalReward = shapes.reduce((sum, shape) => sum + shape.reward, 0);
     return {
       id: "m3",
       name: "Ghosted Lines",
@@ -333,19 +338,29 @@ export const getRandomMinigames = (): Minigame[] => [
       shapes,
       currentShapeIndex: 0,
       threshold: 30,
-      totalReward,
+      totalReward: 15,
     } satisfies Minigame;
   })(),
-  createCircleInRectangleMinigame(),
-  {
-    id: "m4",
-    name: "Trace Circles",
-    type: "traceShape",
-    shapes: generateRandomShapes(createRandomCircle),
-    currentShapeIndex: 0,
-    threshold: 45,
-    totalReward: 20,
-  },
+  (() => {
+    // Only one ellipse shape, so just set a fixed reward
+    const minigame = createCircleInRectangleMinigame();
+    return {
+      ...minigame,
+      totalReward: 25,
+    };
+  })(),
+  (() => {
+    const shapes = generateRandomShapes(createRandomCircle);
+    return {
+      id: "m4",
+      name: "Trace Circles",
+      type: "traceShape",
+      shapes,
+      currentShapeIndex: 0,
+      threshold: 45,
+      totalReward: 30,
+    } satisfies Minigame;
+  })(),
 ];
 
 // Export initial random set
