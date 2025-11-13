@@ -24,7 +24,7 @@
     --color-skrawl-purple: #1C0667;
     --color-skrawl-white: #F2F0EF;
 
-    --font-logotype: "Londrina Solid";
+     --font-logotype: "Londrina Solid";
     --font-header: "Rockwell";
     --font-body: "Nunito";
 
@@ -32,4 +32,32 @@
     --text-header: 40px;
     --text-button: 24px;
     --text-body: 20px;
+}
+
+/* Theme overrides */
+:root[data-theme="coffee"] {
+    --color-skrawl-black: #7f5539;
+    --color-skrawl-cyan: #ddb892;
+    --color-skrawl-orange: #e6ccb2;
+    --color-skrawl-magenta: #b08968;
+    --color-skrawl-purple: #7f5539;
+    --color-skrawl-white: #ede0d4;
+}
+
+:root[data-theme="cotton-candy"] {
+    --color-skrawl-black: #8093f1;
+    --color-skrawl-cyan: #72ddf7;
+    --color-skrawl-orange: #f7aef8;
+    --color-skrawl-magenta: #f7aef8;
+    --color-skrawl-purple: #b388eb;
+    --color-skrawl-white: #f4f4ed;
+}
+
+:root[data-theme="rose"] {
+    --color-skrawl-black: #880d1e;
+    --color-skrawl-cyan: #F26A8D;
+    --color-skrawl-orange: #f49cbb;
+    --color-skrawl-magenta: #F26A8D;
+    --color-skrawl-purple: #dd2d4a;
+    --color-skrawl-white: #cbeef3;
 }

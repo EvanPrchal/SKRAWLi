@@ -34,8 +34,13 @@ const Profile = () => {
     badgeFive: "5",
   };
 
+  // Check if it's a hex color or Tailwind class
+  const isHexColor = profileBackground.startsWith("#");
+  const backgroundStyle = isHexColor ? { backgroundColor: profileBackground } : {};
+  const backgroundClass = isHexColor ? "" : profileBackground;
+
   return (
-    <div className={`flex flex-col h-screen ${profileBackground} bg-[url(/src/assets/images/background.png)] bg-cover`}>
+    <div className={`flex flex-col h-screen ${backgroundClass} bg-[url(/src/assets/images/background.png)] bg-cover`} style={backgroundStyle}>
       <NavigationHeader />
       <div className="flex items-center justify-center flex-grow">
         <div className="w-4/6 h-5/6 flex flex-col bg-skrawl-white overflow-hidden">

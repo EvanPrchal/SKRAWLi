@@ -17,9 +17,9 @@ interface BadgeProps {
 }
 
 const BACKGROUND_OPTIONS = [
-  { name: "Cyan", value: "bg-skrawl-cyan" },
-  { name: "Magenta", value: "bg-skrawl-magenta" },
-  { name: "Orange", value: "bg-skrawl-orange" },
+  { name: "1", value: "bg-skrawl-cyan" },
+  { name: "2", value: "bg-skrawl-magenta" },
+  { name: "3", value: "bg-skrawl-orange" },
 ];
 
 const ProfileInfo: React.FC<BadgeProps> = ({ badges, profileBackground, onBackgroundChange }) => {
@@ -30,6 +30,7 @@ const ProfileInfo: React.FC<BadgeProps> = ({ badges, profileBackground, onBackgr
   const [displayName, setDisplayName] = useState<string>("");
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [hasColorPicker, setHasColorPicker] = useState(false);
 
   // Temporary state for editing
   const [editBio, setEditBio] = useState<string>("");
@@ -47,6 +48,13 @@ const ProfileInfo: React.FC<BadgeProps> = ({ badges, profileBackground, onBackgr
           .getDisplayName()
           .then((data) => setDisplayName(data.display_name || user?.name || ""))
           .catch((err) => console.error("Failed to load display name:", err)),
+        api
+          .getOwnedItems()
+          .then((items) => {
+            const ownsColorPicker = items.some((item) => item.item_id === "color-picker");
+            setHasColorPicker(ownsColorPicker);
+          })
+          .catch((err) => console.error("Failed to load owned items:", err)),
       ]);
     }
   }, [isLoading]);
@@ -139,6 +147,17 @@ const ProfileInfo: React.FC<BadgeProps> = ({ badges, profileBackground, onBackgr
                   </button>
                 ))}
               </div>
+              {hasColorPicker && (
+                <div className="flex flex-col gap-2 mt-3">
+                  <label className="text-sm font-body text-skrawl-purple text-left">Or choose a custom color:</label>
+                  <input
+                    type="color"
+                    value={editProfileBackground.startsWith("#") ? editProfileBackground : "#000000"}
+                    onChange={(e) => handleBackgroundSelect(e.target.value)}
+                    className="w-full h-12 rounded border border-skrawl-purple cursor-pointer"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="flex gap-2 justify-center">

@@ -3,10 +3,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Loading from "./Components/Loading";
 import NavigationHeader from "./Components/NavigationHeader";
+import { useTheme } from "./lib/theme";
 
 const Options = () => {
   const { isLoading } = useAuth0();
   const navigate = useNavigate();
+  const { theme, setTheme, ownedThemes } = useTheme();
 
   const readFromStorage = <T,>(key: string, fallback: T, mapper: (value: string) => T): T => {
     if (typeof window === "undefined") return fallback;
@@ -60,6 +62,31 @@ const Options = () => {
 
         <div className="bg-skrawl-white rounded-lg p-8 w-full max-w-2xl">
           <div className="space-y-6">
+            {/* Theme Selection */}
+            <div className="flex flex-col gap-2">
+              <label className="text-body font-body text-skrawl-purple">Theme</label>
+              <select
+                value={theme}
+                onChange={(e) => setTheme(e.target.value as "default" | "coffee" | "cotton-candy" | "rose")}
+                className="p-2 border rounded-md border-skrawl-purple focus:outline-none focus:ring-2 focus:ring-skrawl-magenta"
+              >
+                {ownedThemes.map((themeOption) => (
+                  <option key={themeOption} value={themeOption}>
+                    {themeOption === "default"
+                      ? "Default Theme"
+                      : themeOption === "coffee"
+                      ? "Coffee Theme"
+                      : themeOption === "cotton-candy"
+                      ? "Cotton Candy Theme"
+                      : "Rose Theme"}
+                  </option>
+                ))}
+              </select>
+              {ownedThemes.length === 1 && (
+                <span className="text-xs text-gray-500">Purchase more themes in the Shop to unlock additional options!</span>
+              )}
+            </div>
+
             {/* Difficulty Level */}
             <div className="flex flex-col gap-2">
               <label className="text-body font-body text-skrawl-purple">Difficulty Level</label>

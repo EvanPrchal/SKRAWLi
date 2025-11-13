@@ -11,9 +11,54 @@ type CatalogItem = {
   description: string;
   price: number;
   category: Category;
+  colors?: string[]; // Optional color palette preview for themes
 };
 
-const CATALOG: CatalogItem[] = [];
+const CATALOG: CatalogItem[] = [
+  // Brushes
+  // { id: "pencil", name: "Pencil", description: "A simple pencil for sketching.", price: 0, category: "Brushes" },
+  // { id: "marker", name: "Marker", description: "A vibrant marker for bold lines.", price: 50, category: "Brushes" },
+  // { id: "chalk", name: "Chalk", description: "A soft chalk for textured drawings.", price: 75, category: "Brushes" },
+
+  // Themes
+  {
+    id: "coffee-theme",
+    name: "Coffee Theme",
+    description: "Warm brown and cream tones for a cozy vibe.",
+    price: 250,
+    category: "Themes",
+    colors: ["#7f5539", "#ddb892", "#e6ccb2", "#b08968", "#ede0d4"],
+  },
+  {
+    id: "cotton-candy-theme",
+    name: "Cotton Candy Theme",
+    description: "Soft pastel colors for a sweet look.",
+    price: 250,
+    category: "Themes",
+    colors: ["#8093f1", "#72ddf7", "#f7aef8", "#b388eb", "#f4f4ed"],
+  },
+  {
+    id: "rose-theme",
+    name: "Rose Theme",
+    description: "Romantic pink and red tones for an elegant look.",
+    price: 250,
+    category: "Themes",
+    colors: ["#880d1e", "#dd2d4a", "#f26a8d", "#f49cbb", "#cbeef3"],
+  },
+
+  // Characters
+  // { id: "ninja", name: "Ninja", description: "A stealthy ninja character.", price: 200, category: "Characters" },
+  // { id: "robot", name: "Robot", description: "A futuristic robot character.", price: 300, category: "Characters" },
+
+  // Misc
+  {
+    id: "color-picker",
+    name: "Color Picker",
+    description: "Unlock full color wheel for profile backgrounds.",
+    price: 300,
+    category: "Misc",
+  },
+];
 
 const TABS: Category[] = ["Brushes", "Themes", "Characters", "Misc"];
 
@@ -122,8 +167,9 @@ const Shop = () => {
                 <tr className="text-skrawl-purple/80">
                   <th className="px-4 py-3 font-header">Name</th>
                   <th className="px-4 py-3 font-header">Description</th>
+                  <th className="px-4 py-3 font-header">Preview</th>
                   <th className="px-4 py-3 font-header">Price</th>
-                  <th className="px-4 py-3 font-header text-right">Action</th>
+                  <th className="px-4 py-3 font-header text-right">Purchase</th>
                 </tr>
               </thead>
               <tbody>
@@ -131,6 +177,25 @@ const Shop = () => {
                   <tr key={item.id} className={`${idx % 2 === 0 ? "bg-white" : "bg-white/80"} text-skrawl-purple`}>
                     <td className="px-4 py-3 font-body">{item.name}</td>
                     <td className="px-4 py-3 font-body text-skrawl-purple/80">{item.description}</td>
+                    <td className="px-4 py-3">
+                      {item.colors ? (
+                        <div className="flex gap-1">
+                          {item.colors.map((color, i) => (
+                            <div key={i} className="w-6 h-6 rounded border border-gray-300" style={{ backgroundColor: color }} title={color} />
+                          ))}
+                        </div>
+                      ) : item.id === "color-picker" ? (
+                        <div
+                          className="w-7 h-7 rounded-full border border-gray-300 shadow-sm"
+                          title="Color Picker"
+                          style={{
+                            background: "conic-gradient(#ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)",
+                          }}
+                        />
+                      ) : (
+                        <span className="text-gray-400 text-sm">—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 font-body">{item.price} coins</td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end">
