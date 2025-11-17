@@ -93,6 +93,33 @@ export function useApi() {
         getAccessTokenSilently
       );
     },
+    async listBadges(): Promise<Array<{ code: string; name: string; description: string | null }>> {
+      return fetchWithAuth("/badges", { method: "GET" }, getAccessTokenSilently);
+    },
+    async getMyBadges(): Promise<Array<{ code: string; name: string; description: string | null }>> {
+      return fetchWithAuth("/users/me/badges", { method: "GET" }, getAccessTokenSilently);
+    },
+    async awardBadge(code: string): Promise<{ status: string; code: string }> {
+      return fetchWithAuth(
+        `/users/me/badges/${code}`,
+        { method: "POST" },
+        getAccessTokenSilently
+      );
+    },
+    async getShowcasedBadges(): Promise<{ showcased_badges: string | null }> {
+      return fetchWithAuth(
+        "/users/me/showcased-badges",
+        { method: "GET" },
+        getAccessTokenSilently
+      );
+    },
+    async updateShowcasedBadges(showcased_badges: string): Promise<{ showcased_badges: string | null }> {
+      return fetchWithAuth(
+        "/users/me/showcased-badges",
+        { method: "PUT", body: JSON.stringify({ showcased_badges }) },
+        getAccessTokenSilently
+      );
+    },
   };
 }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import Loading from "./Components/Loading";
 import Minigames from "./Components/Minigames";
@@ -43,6 +43,9 @@ const Run = () => {
   const [configuredMinigameTime, setConfiguredMinigameTime] = useState<number>(() => timeForDifficulty(readDifficultyLevel()));
   const [timeRemaining, setTimeRemaining] = useState<number>(() => timeForDifficulty(readDifficultyLevel()));
   const [devMode, setDevMode] = useState<boolean>(() => readDevMode());
+  const [completedCount, setCompletedCount] = useState<number>(0);
+  const [streak, setStreak] = useState<number>(0);
+  const [ownedBadges, setOwnedBadges] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -67,14 +70,81 @@ const Run = () => {
     return () => window.removeEventListener("settingsUpdated", onSettings as EventListener);
   }, []);
 
+  // Load user's badges on mount
+  useEffect(() => {
+    if (isGuest) {
+      setOwnedBadges(new Set());
+      return;
+    }
+
+    let cancelled = false;
+    api
+      .getMyBadges()
+      .then((badges) => {
+        if (!cancelled) {
+          setOwnedBadges(new Set(badges.map((badge) => badge.code)));
+        }
+      })
+      .catch((err) => console.error("Failed to load badges:", err));
+
+    return () => {
+      cancelled = true;
+    };
+  }, [api, isGuest]);
+
+  const maybeAward = useCallback(
+    (code: string) => {
+      if (isGuest || ownedBadges.has(code)) {
+        return;
+      }
+      api
+        .awardBadge(code)
+        .then((res) => {
+          if (res.status === "awarded" || res.status === "exists") {
+            setOwnedBadges((prev) => new Set([...prev, code]));
+          }
+        })
+        .catch((err) => console.error(`Failed to award badge ${code}:`, err));
+    },
+    [api, isGuest, ownedBadges]
+  );
+
   const handleComplete = (success: boolean, reward: number) => {
     if (success) {
-      setCoins((c) => c + reward);
+      setCoins((c) => {
+        const next = c + reward;
+        if (next >= 50) {
+          maybeAward("COIN_COLLECTOR");
+        }
+        return next;
+      });
+      setCompletedCount((count) => {
+        const next = count + 1;
+        if (next === 1) {
+          maybeAward("FIRST_STEPS");
+        }
+        if (next === 20) {
+          maybeAward("SURVIVOR");
+        }
+        return next;
+      });
+      setStreak((currentStreak) => {
+        const next = currentStreak + 1;
+        if (next === 10) {
+          maybeAward("PERFECT_10");
+        }
+        return next;
+      });
+      // Check for speed demon badge (more than 5 seconds remaining)
+      if (timeRemaining > 5) {
+        maybeAward("SPEED_DEMON");
+      }
       // Save coins to backend when signed in
       if (!isGuest) {
         api.incrementCoins(reward).catch((err) => console.error("Failed to save coins:", err));
       }
     } else {
+      setStreak(0);
       if (!devMode) {
         setLives((l) => {
           const nextLives = l - 1;
@@ -96,6 +166,8 @@ const Run = () => {
     setGameOver(false);
     setCoins(0);
     setLives(3);
+    setCompletedCount(0);
+    setStreak(0);
   };
 
   const handleStartOver = () => {

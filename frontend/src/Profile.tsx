@@ -4,7 +4,6 @@ import Loading from "./Components/Loading";
 import NavigationHeader from "./Components/NavigationHeader";
 import { Tab } from "@headlessui/react";
 import ProfileInfo from "./Components/ProfileInfo";
-import type { ProfileBadges } from "./Components/ProfileInfo";
 import OwnedBadges from "./Components/OwnedBadges";
 import { useApi } from "./lib/api";
 
@@ -25,14 +24,6 @@ const Profile = () => {
   if (isLoading) {
     return <Loading />;
   }
-
-  const badges: ProfileBadges = {
-    badgeOne: "1",
-    badgeTwo: "2",
-    badgeThree: "3",
-    badgeFour: "4",
-    badgeFive: "5",
-  };
 
   // Check if it's a hex color or Tailwind class
   const isHexColor = profileBackground.startsWith("#");
@@ -59,7 +50,7 @@ const Profile = () => {
             </Tab.List>
             <Tab.Panels className="flex-grow flex overflow-y-auto">
               <Tab.Panel className="h-full w-full flex items-center justify-center p-4 overflow-y-auto">
-                <ProfileInfo badges={badges} profileBackground={profileBackground} onBackgroundChange={setProfileBackground} />
+                <ProfileInfo profileBackground={profileBackground} onBackgroundChange={setProfileBackground} />
               </Tab.Panel>
               <Tab.Panel className="h-full w-full flex items-center justify-center p-4 overflow-y-auto">
                 <OwnedBadges />

@@ -17,9 +17,27 @@ type CatalogItem = {
 
 const CATALOG: CatalogItem[] = [
   // Brushes
-  // { id: "pencil", name: "Pencil", description: "A simple pencil for sketching.", price: 0, category: "Brushes" },
-  // { id: "marker", name: "Marker", description: "A vibrant marker for bold lines.", price: 50, category: "Brushes" },
-  // { id: "chalk", name: "Chalk", description: "A soft chalk for textured drawings.", price: 75, category: "Brushes" },
+  {
+    id: "neon-glow-brush",
+    name: "Neon Glow Brush",
+    description: "A vibrant brush that adds a glowing neon effect to your strokes.",
+    price: 150,
+    category: "Brushes",
+  },
+  {
+    id: "rainbow-brush",
+    name: "Rainbow Brush",
+    description: "Paint with all the colors of the rainbow in a single stroke.",
+    price: 200,
+    category: "Brushes",
+  },
+  {
+    id: "spray-paint-brush",
+    name: "Spray Paint Brush",
+    description: "Create a spray-painted texture with scattered dots and gradients.",
+    price: 175,
+    category: "Brushes",
+  },
 
   // Themes
   {

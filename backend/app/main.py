@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import users
+from app.routers import badges, users
+from app.services.badges import seed_default_badges
 
 app = FastAPI(title="SKRAWLi")
 
@@ -15,3 +16,10 @@ app.add_middleware(
 )
 
 app.include_router(users.router, tags=["users"])
+app.include_router(badges.router, tags=["badges"])
+
+
+@app.on_event("startup")
+def bootstrap_seed() -> None:
+    """Seed default badges on startup."""
+    seed_default_badges()

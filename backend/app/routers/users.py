@@ -42,6 +42,12 @@ class ProfileBackgroundResponse(BaseModel):
 class UpdateProfileBackgroundRequest(BaseModel):
     profile_background: str
 
+class ShowcasedBadgesResponse(BaseModel):
+    showcased_badges: str | None
+
+class UpdateShowcasedBadgesRequest(BaseModel):
+    showcased_badges: str
+
 @router.get("/users/me/coins", response_model=CoinsResponse)
 async def get_coins(
     current_user: User = Depends(get_current_user),
@@ -167,3 +173,23 @@ async def update_profile_background(
     db.commit()
     db.refresh(current_user)
     return ProfileBackgroundResponse(profile_background=current_user.profile_background)
+
+@router.get("/users/me/showcased-badges", response_model=ShowcasedBadgesResponse)
+async def get_showcased_badges(
+    current_user: User = Depends(get_current_user),
+) -> ShowcasedBadgesResponse:
+    """Get the current user's showcased badges."""
+    return ShowcasedBadgesResponse(showcased_badges=current_user.showcased_badges)
+
+@router.put("/users/me/showcased-badges", response_model=ShowcasedBadgesResponse)
+async def update_showcased_badges(
+    request: UpdateShowcasedBadgesRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> ShowcasedBadgesResponse:
+    """Update the user's showcased badges (up to 3, comma-separated codes)."""
+    current_user.showcased_badges = request.showcased_badges
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+    return ShowcasedBadgesResponse(showcased_badges=current_user.showcased_badges)

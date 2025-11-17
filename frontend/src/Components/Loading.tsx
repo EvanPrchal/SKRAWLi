@@ -3,7 +3,7 @@ import { randomizeColor } from "./utils";
 
 const Loading = () => {
   const [dots, setDots] = useState(1);
-  let bgColor: string = randomizeColor();
+  const [bgColor] = useState(() => randomizeColor());
 
   useEffect(() => {
     const interval = setInterval(() => {
