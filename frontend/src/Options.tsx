@@ -1,4 +1,4 @@
-import { useAuth0, withAuthenticationRequired } from "@auth0/auth0-react";
+import { useAuth0 } from "@auth0/auth0-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Loading from "./Components/Loading";
@@ -6,7 +6,7 @@ import NavigationHeader from "./Components/NavigationHeader";
 import { useTheme } from "./lib/theme";
 
 const Options = () => {
-  const { isLoading } = useAuth0();
+  const { isLoading, isAuthenticated } = useAuth0();
   const navigate = useNavigate();
   const { theme, setTheme, ownedThemes } = useTheme();
 
@@ -83,7 +83,11 @@ const Options = () => {
                 ))}
               </select>
               {ownedThemes.length === 1 && (
-                <span className="text-xs text-gray-500">Purchase more themes in the Shop to unlock additional options!</span>
+                <span className="text-xs text-gray-500">
+                  {isAuthenticated
+                    ? "Purchase more themes in the Shop to unlock additional options!"
+                    : "Sign in to unlock your purchased themes and shop bonuses."}
+                </span>
               )}
             </div>
 
@@ -176,6 +180,4 @@ const Options = () => {
   );
 };
 
-export default withAuthenticationRequired(Options, {
-  onRedirecting: () => <Loading />,
-});
+export default Options;

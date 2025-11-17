@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth0, withAuthenticationRequired } from "@auth0/auth0-react";
+import { useAuth0 } from "@auth0/auth0-react";
 import Loading from "./Components/Loading";
 import Minigames from "./Components/Minigames";
 import GameplayLayout from "./Components/GameplayLayout";
@@ -49,7 +49,8 @@ const getMinigameOptions = (): Minigame[] => {
 };
 
 const MinigameSelect = () => {
-  const { user, isLoading } = useAuth0();
+  const { user, isLoading, isAuthenticated } = useAuth0();
+  const isGuest = !isAuthenticated;
   const [selectedMinigame, setSelectedMinigame] = useState<Minigame | null>(null);
   const [coins, setCoins] = useState<number>(0);
   const [gameOver, setGameOver] = useState<boolean>(false);
@@ -99,10 +100,11 @@ const MinigameSelect = () => {
   }
 
   return (
-    <GameplayLayout lives={lives} timeRemaining={timeRemaining} userImage={user?.picture} userName={user?.name}>
+    <GameplayLayout lives={lives} timeRemaining={timeRemaining} userImage={user?.picture} userName={user?.name ?? (isGuest ? "Guest" : undefined)}>
       {!selectedMinigame ? (
         <div className="flex flex-col h-full justify-around items-center p-8">
           <h2 className="text-header font-header text-skrawl-purple">Select a Minigame</h2>
+          {isGuest && <p className="text-body font-body text-skrawl-purple">Playing as Guest (progress won&apos;t save)</p>}
           <div className="grid grid-cols-2 gap-4 w-full max-w-2xl">
             {minigameOptions.map((minigame) => (
               <button
@@ -147,6 +149,4 @@ const MinigameSelect = () => {
   );
 };
 
-export default withAuthenticationRequired(MinigameSelect, {
-  onRedirecting: () => <Loading />,
-});
+export default MinigameSelect;

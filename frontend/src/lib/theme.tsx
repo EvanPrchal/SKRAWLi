@@ -26,39 +26,54 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   });
   const [ownedThemes, setOwnedThemes] = useState<ThemeType[]>(["default"]);
   const api = useApi();
-  const { isLoading } = useAuth0();
+  const { isLoading, isAuthenticated } = useAuth0();
 
   useEffect(() => {
-    if (!isLoading) {
-      api
-        .getOwnedItems()
-        .then((items) => {
-          const themes: ThemeType[] = ["default"];
-          if (items.some((item) => item.item_id === "coffee-theme")) {
-            themes.push("coffee");
-          }
-          if (items.some((item) => item.item_id === "cotton-candy-theme")) {
-            themes.push("cotton-candy");
-          }
-          if (items.some((item) => item.item_id === "rose-theme")) {
-            themes.push("rose");
-          }
-          setOwnedThemes(themes);
-
-          const savedTheme = localStorage.getItem("theme") as ThemeType;
-          // Only update if the saved theme is valid and different from current
-          if (savedTheme && themes.includes(savedTheme) && savedTheme !== theme) {
-            setThemeState(savedTheme);
-          } else if (savedTheme && !themes.includes(savedTheme)) {
-            // If user has a theme saved that they don't own, reset to default
-            setThemeState("default");
-            localStorage.setItem("theme", "default");
-            document.documentElement.setAttribute("data-theme", "default");
-          }
-        })
-        .catch((err) => console.error("Failed to load theme:", err));
+    if (typeof window === "undefined" || isLoading) {
+      return;
     }
-  }, [isLoading]);
+
+    if (!isAuthenticated) {
+      setOwnedThemes(["default"]);
+      const savedTheme = localStorage.getItem("theme") as ThemeType | null;
+      if (savedTheme && savedTheme !== "default") {
+        localStorage.setItem("theme", "default");
+        setThemeState("default");
+      }
+      return;
+    }
+
+    let cancelled = false;
+    api
+      .getOwnedItems()
+      .then((items) => {
+        if (cancelled) return;
+        const themes: ThemeType[] = ["default"];
+        if (items.some((item) => item.item_id === "coffee-theme")) {
+          themes.push("coffee");
+        }
+        if (items.some((item) => item.item_id === "cotton-candy-theme")) {
+          themes.push("cotton-candy");
+        }
+        if (items.some((item) => item.item_id === "rose-theme")) {
+          themes.push("rose");
+        }
+        setOwnedThemes(themes);
+
+        const savedTheme = localStorage.getItem("theme") as ThemeType | null;
+        if (savedTheme && themes.includes(savedTheme)) {
+          setThemeState((current) => (current === savedTheme ? current : savedTheme));
+        } else {
+          localStorage.setItem("theme", "default");
+          setThemeState("default");
+        }
+      })
+      .catch((err) => console.error("Failed to load theme:", err));
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoading, isAuthenticated]);
 
   const setTheme = (newTheme: ThemeType) => {
     setThemeState(newTheme);

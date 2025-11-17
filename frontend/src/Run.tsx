@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAuth0, withAuthenticationRequired } from "@auth0/auth0-react";
+import { useAuth0 } from "@auth0/auth0-react";
 import Loading from "./Components/Loading";
 import Minigames from "./Components/Minigames";
 import GameplayLayout from "./Components/GameplayLayout";
@@ -33,7 +33,8 @@ const readDevMode = (): boolean => {
 };
 
 const Run = () => {
-  const { user, isLoading } = useAuth0();
+  const { user, isLoading, isAuthenticated } = useAuth0();
+  const isGuest = !isAuthenticated;
   const api = useApi();
   const [started, setStarted] = useState<boolean>(false);
   const [coins, setCoins] = useState<number>(0);
@@ -69,8 +70,10 @@ const Run = () => {
   const handleComplete = (success: boolean, reward: number) => {
     if (success) {
       setCoins((c) => c + reward);
-      // Save coins to backend
-      api.incrementCoins(reward).catch((err) => console.error("Failed to save coins:", err));
+      // Save coins to backend when signed in
+      if (!isGuest) {
+        api.incrementCoins(reward).catch((err) => console.error("Failed to save coins:", err));
+      }
     } else {
       if (!devMode) {
         setLives((l) => {
@@ -104,9 +107,10 @@ const Run = () => {
   }
 
   return (
-    <GameplayLayout lives={lives} timeRemaining={timeRemaining} userImage={user?.picture} userName={user?.name}>
+    <GameplayLayout lives={lives} timeRemaining={timeRemaining} userImage={user?.picture} userName={user?.name ?? (isGuest ? "Guest" : undefined)}>
       {!started ? (
         <div className="flex flex-col h-full justify-center items-center gap-4">
+          {isGuest && <p className="text-body font-body text-skrawl-purple">Playing as Guest (progress won&apos;t save)</p>}
           <button
             onClick={handleStart}
             className="text-logotype font-logotype text-skrawl-purple hover:cursor-pointer hover:text-skrawl-magenta transition-colors"
@@ -147,6 +151,4 @@ const Run = () => {
   );
 };
 
-export default withAuthenticationRequired(Run, {
-  onRedirecting: () => <Loading />,
-});
+export default Run;

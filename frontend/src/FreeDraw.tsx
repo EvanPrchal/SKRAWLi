@@ -23,6 +23,8 @@ const FreeDraw = () => {
     }
   }, [isEraser]);
 
+  // (Bat brush removed)
+
   // Build preset colors from current theme CSS variables
   useEffect(() => {
     const root = document.documentElement;
@@ -93,6 +95,7 @@ const FreeDraw = () => {
               strokeColor={isEraser ? "#ffffff" : color}
               canvasColor="#ffffff"
               withTimestamp={false}
+              eraserWidth={size}
             />
           </div>
 
@@ -211,7 +214,7 @@ const FreeDraw = () => {
               >
                 Redo
               </button>
-              <button onClick={handleClear} className="px-3 py-2 rounded-md bg-skrawl-magenta text-white hover:bg-skrawl-purple" title="Clear canvas">
+              <button onClick={handleClear} className="px-3 py-2 rounded-md bg-skrawl-purple text-white hover:bg-skrawl-magenta" title="Clear canvas">
                 Clear
               </button>
               <button onClick={handleSave} className="px-3 py-2 rounded-md bg-skrawl-purple text-white hover:bg-skrawl-magenta" title="Save PNG">
