@@ -26,13 +26,6 @@ const readDifficultyLevel = (): string => {
   return localStorage.getItem("difficultyLevel") || "normal";
 };
 
-const readDevMode = (): boolean => {
-  if (typeof window === "undefined") {
-    return false;
-  }
-  return localStorage.getItem("devMode") === "true";
-};
-
 // Get a representative minigame for each type
 const getMinigameOptions = (): Minigame[] => {
   const allMinigames = getRandomMinigames();
@@ -57,7 +50,6 @@ const MinigameSelect = () => {
   const [lives, setLives] = useState<number>(3);
   const [configuredMinigameTime, setConfiguredMinigameTime] = useState<number>(() => timeForDifficulty(readDifficultyLevel()));
   const [timeRemaining, setTimeRemaining] = useState<number>(() => timeForDifficulty(readDifficultyLevel()));
-  const [devMode] = useState<boolean>(() => readDevMode());
 
   const minigameOptions = getMinigameOptions();
 
@@ -65,16 +57,14 @@ const MinigameSelect = () => {
     if (success) {
       setCoins((c) => c + reward);
     } else {
-      if (!devMode) {
-        setLives((l) => {
-          const nextLives = l - 1;
-          if (nextLives <= 0) {
-            setGameOver(true);
-            return 0;
-          }
-          return nextLives;
-        });
-      }
+      setLives((l) => {
+        const nextLives = l - 1;
+        if (nextLives <= 0) {
+          setGameOver(true);
+          return 0;
+        }
+        return nextLives;
+      });
     }
   };
 
@@ -126,13 +116,10 @@ const MinigameSelect = () => {
           <Minigames
             onComplete={handleComplete}
             onGameOver={() => {
-              if (!devMode) {
-                setGameOver(true);
-              }
+              setGameOver(true);
             }}
             onTimeUpdate={setTimeRemaining}
             initialTime={configuredMinigameTime}
-            devMode={devMode}
             specificMinigame={selectedMinigame}
           />
         </div>

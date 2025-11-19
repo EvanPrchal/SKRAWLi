@@ -25,13 +25,6 @@ const readDifficultyLevel = (): string => {
   return localStorage.getItem("difficultyLevel") || "normal";
 };
 
-const readDevMode = (): boolean => {
-  if (typeof window === "undefined") {
-    return false;
-  }
-  return localStorage.getItem("devMode") === "true";
-};
-
 const Run = () => {
   const { user, isLoading, isAuthenticated } = useAuth0();
   const isGuest = !isAuthenticated;
@@ -42,7 +35,6 @@ const Run = () => {
   const [lives, setLives] = useState<number>(3);
   const [configuredMinigameTime, setConfiguredMinigameTime] = useState<number>(() => timeForDifficulty(readDifficultyLevel()));
   const [timeRemaining, setTimeRemaining] = useState<number>(() => timeForDifficulty(readDifficultyLevel()));
-  const [devMode, setDevMode] = useState<boolean>(() => readDevMode());
   const [completedCount, setCompletedCount] = useState<number>(0);
   const [streak, setStreak] = useState<number>(0);
   const [ownedBadges, setOwnedBadges] = useState<Set<string>>(new Set());
@@ -58,8 +50,6 @@ const Run = () => {
     const onSettings = (e: Event) => {
       const detail = (e as CustomEvent).detail || {};
       const level = detail.difficultyLevel || readDifficultyLevel();
-      const devModeSetting = detail.devMode ?? readDevMode();
-      setDevMode(!!devModeSetting);
 
       const nextTime = timeForDifficulty(level);
       setConfiguredMinigameTime(nextTime);
@@ -145,16 +135,14 @@ const Run = () => {
       }
     } else {
       setStreak(0);
-      if (!devMode) {
-        setLives((l) => {
-          const nextLives = l - 1;
-          if (nextLives <= 0) {
-            setGameOver(true);
-            return 0;
-          }
-          return nextLives;
-        });
-      }
+      setLives((l) => {
+        const nextLives = l - 1;
+        if (nextLives <= 0) {
+          setGameOver(true);
+          return 0;
+        }
+        return nextLives;
+      });
     }
   };
 
@@ -198,13 +186,10 @@ const Run = () => {
           <Minigames
             onComplete={handleComplete}
             onGameOver={() => {
-              if (!devMode) {
-                setGameOver(true);
-              }
+              setGameOver(true);
             }}
             onTimeUpdate={setTimeRemaining}
             initialTime={configuredMinigameTime}
-            devMode={devMode}
           />
         </div>
       ) : (

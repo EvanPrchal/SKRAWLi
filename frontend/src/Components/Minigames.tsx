@@ -8,13 +8,12 @@ interface MinigamesProps {
   onGameOver: () => void;
   onTimeUpdate: (time: number) => void;
   initialTime?: number;
-  devMode?: boolean;
   specificMinigame?: Minigame; // Optional: start with a specific minigame
 }
 
 const MINIGAME_TIME = 10; // default seconds per minigame
 
-const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpdate, initialTime, devMode = false, specificMinigame }) => {
+const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpdate, initialTime, specificMinigame }) => {
   // Function to get a random minigame
   const getRandomMinigame = useCallback(() => {
     const randomMinigames = getRandomMinigames();
@@ -31,22 +30,27 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
 
   // Timer effect
   useEffect(() => {
-    if (!timerActive || showTransition || devMode) return;
-
-    if (timeLeft <= 0) {
-      onGameOver();
-      return;
-    }
+    if (!timerActive || showTransition) return;
 
     const timer = setInterval(() => {
       setTimeLeft((t) => {
         const newTime = t - 1;
+        if (newTime <= 0) {
+          return 0;
+        }
         return newTime;
       });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, timerActive, showTransition, onGameOver, devMode]);
+  }, [timerActive, showTransition]);
+
+  // Check for game over when time runs out
+  useEffect(() => {
+    if (timerActive && timeLeft <= 0) {
+      onGameOver();
+    }
+  }, [timeLeft, timerActive, onGameOver]);
 
   // Separate effect to notify parent of time changes
   useEffect(() => {
