@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import NavigationHeader from "./Components/NavigationHeader";
 import Loading from "./Components/Loading";
 import { useApi } from "./lib/api";
+import { useTheme } from "./lib/theme";
 import { useAuth0 } from "@auth0/auth0-react";
 
 type Category = "Brushes" | "Themes" | "Characters" | "Misc";
@@ -42,6 +43,14 @@ const CATALOG: CatalogItem[] = [
   },
 
   // Themes
+  {
+    id: "default-theme",
+    name: "Default Theme",
+    description: "Base SKRAWLi theme (always available).",
+    price: 0,
+    category: "Themes",
+    colors: ["#1C0667", "#E81E65", "#FF9F1C", "#2EC4B6", "#241f21"],
+  },
   {
     id: "coffee-theme",
     name: "Coffee Theme",
@@ -94,6 +103,7 @@ const BRUSH_STYLE_MAP: Record<string, string> = {
 const Shop = () => {
   const { isLoading, isAuthenticated } = useAuth0();
   const api = useApi();
+  const { theme, setTheme, ownedThemes } = useTheme();
   const [activeTab, setActiveTab] = useState<Category>("Brushes");
   // Use null before data loads to avoid flashing 0
   const [coins, setCoins] = useState<number | null>(null);
@@ -137,7 +147,7 @@ const Shop = () => {
   }, [isLoading, isAuthenticated]);
 
   const items = useMemo(() => CATALOG.filter((i) => i.category === activeTab), [activeTab]);
-  const isOwned = (id: string) => id === "smooth-brush" || owned.includes(id);
+  const isOwned = (id: string) => id === "smooth-brush" || id === "default-theme" || owned.includes(id);
   const canAfford = (price: number) => (coins ?? 0) >= price;
 
   if (isLoading) {
@@ -167,6 +177,22 @@ const Shop = () => {
       console.error("Failed to purchase item:", err);
       alert("Purchase failed. Please try again.");
     }
+  };
+
+  // Map catalog theme item id to ThemeProvider theme key
+  const themeIdMap: Record<string, string> = {
+    "default-theme": "default",
+    "coffee-theme": "coffee",
+    "cotton-candy-theme": "cotton-candy",
+    "rose-theme": "rose",
+  };
+
+  const handleEquipTheme = (itemId: string) => {
+    const mapped = themeIdMap[itemId];
+    if (!mapped) return;
+    // Ensure user actually owns the theme per provider's ownedThemes list
+    if (!ownedThemes.includes(mapped as any)) return;
+    setTheme(mapped as any);
   };
 
   return (
@@ -262,7 +288,9 @@ const Shop = () => {
                           <span className="text-gray-400 text-sm">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 font-body">{item.price} coins</td>
+                      <td className="px-4 py-3 font-body">
+                        {item.price === 0 && (item.id === "smooth-brush" || item.id === "default-theme") ? "-" : `${item.price} coins`}
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-2">
                           {isOwned(item.id) && item.category === "Brushes" ? (
@@ -272,6 +300,21 @@ const Shop = () => {
                               return (
                                 <button
                                   onClick={() => handleEquip(item.id)}
+                                  className={`py-2 px-4 rounded-md font-body transition-colors ${
+                                    isEquipped ? "bg-skrawl-cyan text-white" : "bg-skrawl-purple text-white hover:bg-skrawl-magenta"
+                                  }`}
+                                >
+                                  {isEquipped ? "✓ Equipped" : "Equip"}
+                                </button>
+                              );
+                            })()
+                          ) : isOwned(item.id) && item.category === "Themes" ? (
+                            (() => {
+                              const mapped = themeIdMap[item.id];
+                              const isEquipped = mapped === theme;
+                              return (
+                                <button
+                                  onClick={() => handleEquipTheme(item.id)}
                                   className={`py-2 px-4 rounded-md font-body transition-colors ${
                                     isEquipped ? "bg-skrawl-cyan text-white" : "bg-skrawl-purple text-white hover:bg-skrawl-magenta"
                                   }`}
