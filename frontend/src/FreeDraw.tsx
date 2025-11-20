@@ -140,6 +140,9 @@ const FreeDraw = () => {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    // Preserve existing drawing by not clearing if we already rendered live.
+    // Only clear when performing a full rebuild (explicit clear action).
+    // Here we rebuild completely to stay consistent after undo/redo additions later.
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     for (const stroke of pixelStrokes) {
       for (const sq of stroke) {
@@ -253,10 +256,12 @@ const FreeDraw = () => {
   const handlePointerUp = () => {
     isDrawingRef.current = false;
     if (activeBrush === "pixel" && pixelCurrentStrokeRef.current.length) {
-      setPixelStrokes((prev) => [...prev, pixelCurrentStrokeRef.current]);
+      const strokeCopy = [...pixelCurrentStrokeRef.current];
+      setPixelStrokes((prev) => [...prev, strokeCopy]);
       pixelCurrentStrokeRef.current = [];
     } else if (activeBrush === "rainbow" && rainbowCurrentStrokeRef.current.length) {
-      setRainbowStrokes((prev) => [...prev, rainbowCurrentStrokeRef.current]);
+      const strokeCopy = [...rainbowCurrentStrokeRef.current];
+      setRainbowStrokes((prev) => [...prev, strokeCopy]);
       rainbowCurrentStrokeRef.current = [];
     }
   };
@@ -427,12 +432,10 @@ const FreeDraw = () => {
                 <select
                   value={activeBrush}
                   onChange={(e) => setActiveBrush(e.target.value as BrushEffect)}
-                  className="px-3 py-2 rounded-md border border-skrawl-purple/40 bg-white text-skrawl-purple font-body text-sm focus:outline-none focus:ring-2 focus:ring-skrawl-cyan"
+                  className="px-3 py-2 rounded-md border border-skrawl-purple/40 bg-white text-skrawl-purple font-body text-sm focus:outline-none focus:ring-2 focus:ring-skrawl-magenta"
                 >
                   <option value="normal">Normal</option>
-                  {ownedBrushes.includes("neon-glow-brush") && <option value="neon-glow">✨ Neon Glow</option>}
                   {ownedBrushes.includes("rainbow-brush") && <option value="rainbow">🌈 Rainbow</option>}
-                  {ownedBrushes.includes("spray-paint-brush") && <option value="spray-paint">💨 Spray Paint</option>}
                   {ownedBrushes.includes("pixel-brush") && <option value="pixel">🟦 Pixel Brush</option>}
                 </select>
               </div>
