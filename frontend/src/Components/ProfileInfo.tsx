@@ -176,7 +176,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profileBackground, onBackgrou
                     key={option.value}
                     onClick={() => handleBackgroundSelect(option.value)}
                     className={`flex flex-col items-center gap-1 p-2 rounded border-2 transition-all ${
-                      editProfileBackground === option.value ? "border-skrawl-purple scale-110" : "border-gray-300 hover:border-skrawl-cyan"
+                      editProfileBackground === option.value ? "border-skrawl-purple scale-110" : "border-gray-300 hover:border-skrawl-magenta"
                     }`}
                   >
                     <div className={`w-12 h-12 rounded ${option.value} border border-gray-400`} />
@@ -264,7 +264,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profileBackground, onBackgrou
                           key={badge.code}
                           onClick={() => toggleShowcasedBadge(badge.code)}
                           className={`flex items-center gap-2 p-2 rounded border transition ${
-                            selected ? "border-skrawl-purple bg-skrawl-purple/10" : "border-gray-300 hover:border-skrawl-cyan"
+                            selected ? "border-skrawl-purple bg-skrawl-purple/10" : "border-gray-300 hover:border-skrawl-magenta"
                           }`}
                         >
                           <div

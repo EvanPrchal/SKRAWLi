@@ -301,7 +301,7 @@ const Shop = () => {
                                 <button
                                   onClick={() => handleEquip(item.id)}
                                   className={`py-2 px-4 rounded-md font-body transition-colors ${
-                                    isEquipped ? "bg-skrawl-cyan text-white" : "bg-skrawl-purple text-white hover:bg-skrawl-magenta"
+                                    isEquipped ? "bg-skrawl-magenta text-white" : "bg-skrawl-purple text-white hover:bg-skrawl-magenta"
                                   }`}
                                 >
                                   {isEquipped ? "✓ Equipped" : "Equip"}
@@ -316,7 +316,7 @@ const Shop = () => {
                                 <button
                                   onClick={() => handleEquipTheme(item.id)}
                                   className={`py-2 px-4 rounded-md font-body transition-colors ${
-                                    isEquipped ? "bg-skrawl-cyan text-white" : "bg-skrawl-purple text-white hover:bg-skrawl-magenta"
+                                    isEquipped ? "bg-skrawl-magenta text-white" : "bg-skrawl-purple text-white hover:bg-skrawl-magenta"
                                   }`}
                                 >
                                   {isEquipped ? "✓ Equipped" : "Equip"}

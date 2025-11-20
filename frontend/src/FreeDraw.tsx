@@ -31,6 +31,9 @@ const FreeDraw = () => {
   const pixelCurrentStrokeRef = useRef<{ x: number; y: number; color: string; size: number }[]>([]);
   const [rainbowStrokes, setRainbowStrokes] = useState<{ x: number; y: number; hue: number; size: number; erase?: boolean }[][]>([]);
   const rainbowCurrentStrokeRef = useRef<{ x: number; y: number; hue: number; size: number; erase?: boolean }[]>([]);
+  // Profile background integration
+  const [profileBackground, setProfileBackground] = useState<string>("bg-skrawl-black");
+  const [profileBgStyle, setProfileBgStyle] = useState<Record<string, string>>({});
 
   // Load owned brush effects
   useEffect(() => {
@@ -42,6 +45,27 @@ const FreeDraw = () => {
         setOwnedBrushes(brushes);
       })
       .catch((err) => console.error("Failed to load owned brushes:", err));
+  }, [isAuthenticated, api]);
+
+  // Load profile background (class or hex) and prepare style/class usage
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setProfileBackground("bg-skrawl-black");
+      setProfileBgStyle({});
+      return;
+    }
+    api
+      .getProfileBackground()
+      .then((data) => {
+        const bg = data.profile_background || "bg-skrawl-black";
+        setProfileBackground(bg);
+        if (bg.startsWith("#")) {
+          setProfileBgStyle({ backgroundColor: bg });
+        } else {
+          setProfileBgStyle({});
+        }
+      })
+      .catch((err) => console.error("Failed to load profile background for FreeDraw:", err));
   }, [isAuthenticated, api]);
 
   // Sync erase mode with canvas
@@ -317,8 +341,11 @@ const FreeDraw = () => {
     addRainbowPoint(e);
   };
 
+  // Determine dynamic background classes (exclude tailwind class if using hex style)
+  const containerBgClass = profileBackground.startsWith("#") ? "" : profileBackground;
+
   return (
-    <div className="min-h-screen bg-skrawl-black bg-[url('/src/assets/images/background.png')] bg-cover">
+    <div className={`min-h-screen ${containerBgClass} bg-[url('/src/assets/images/background.png')] bg-cover`} style={profileBgStyle}>
       <NavigationHeader />
 
       <div className="mx-auto max-w-7xl p-4 h-[calc(100vh-80px)]">
@@ -458,7 +485,7 @@ const FreeDraw = () => {
                       setPrevColor(current);
                     }}
                     disabled={activeBrush === "rainbow"}
-                    className="w-6 h-6 rounded-full border border-gray-300 shadow-sm hover:ring-2 hover:ring-skrawl-cyan focus:outline-none disabled:opacity-60"
+                    className="w-6 h-6 rounded-full border border-gray-300 shadow-sm hover:ring-2 hover:ring-skrawl-magenta focus:outline-none disabled:opacity-60"
                     style={{ backgroundColor: prevColor }}
                   />
                   <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-sm select-none">

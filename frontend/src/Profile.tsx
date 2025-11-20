@@ -41,7 +41,9 @@ const Profile = () => {
                 <Tab
                   key={tab}
                   className={({ selected }) =>
-                    `py-2 px-4 text-skrawl-white hover:text-skrawl-cyan transition-colors focus:outline-none ${selected ? "text-skrawl-orange" : ""}`
+                    `py-2 px-4 text-skrawl-white hover:text-skrawl-magenta transition-colors focus:outline-none ${
+                      selected ? "text-skrawl-orange" : ""
+                    }`
                   }
                 >
                   {tab}

@@ -53,7 +53,7 @@ const Options = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-skrawl-black bg-[url('/src/assets/images/background.png')] bg-cover">
+    <div className="flex flex-col h-screen bg-skrawl-orange bg-[url('/src/assets/images/background.png')] bg-cover">
       <NavigationHeader />
       <div className="flex flex-col items-center justify-center p-8">
         <h1 className="text-logotype font-logotype text-skrawl-white mb-8">Options</h1>

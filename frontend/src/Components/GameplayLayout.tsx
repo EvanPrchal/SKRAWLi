@@ -10,7 +10,7 @@ interface GameplayLayoutProps {
 
 const GameplayLayout: React.FC<GameplayLayoutProps> = ({ lives, timeRemaining, userName, children }) => {
   return (
-    <div className="flex flex-col h-screen bg-skrawl-magenta bg-[url('/src/assets/images/background.png')] bg-cover items-center justify-center">
+    <div className="flex flex-col h-screen bg-skrawl-cyan bg-[url('/src/assets/images/background.png')] bg-cover items-center justify-center">
       <section className="gameplay-ui w-4/6 bg-skrawl-white mb-2 rounded-t-lg text-skrawl-purple flex justify-around font-header text-header items-center">
         <div className="lives-ui flex">
           <img src="./src/assets/svgs/lives.png" alt="Lives" />
