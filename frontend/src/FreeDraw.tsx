@@ -3,6 +3,8 @@ import NavigationHeader from "./Components/NavigationHeader";
 import { ReactSketchCanvas } from "react-sketch-canvas";
 import { useTheme } from "./lib/theme";
 import { useApi } from "./lib/api";
+import Loading from "./Components/Loading";
+import { useDataReady } from "./lib/useDataReady";
 import { useAuth0 } from "@auth0/auth0-react";
 
 type SketchRef = any; // fallback to keep build smooth if type is missing
@@ -24,6 +26,7 @@ const FreeDraw = () => {
   const [isEraser, setIsEraser] = useState<boolean>(false);
   const [presets, setPresets] = useState<string[]>(["#1C0667", "#E81E65", "#FF9F1C", "#2EC4B6", "#241f21", "#ffffff"]);
   const [ownedBrushes, setOwnedBrushes] = useState<string[]>([]);
+  const [ownedBrushesLoaded, setOwnedBrushesLoaded] = useState<boolean>(false);
   const [activeBrush, setActiveBrush] = useState<BrushEffect>("normal");
   // Rainbow preview hue derived on the fly; no state/interval needed now.
   const isDrawingRef = useRef<boolean>(false);
@@ -34,17 +37,26 @@ const FreeDraw = () => {
   // Profile background integration
   const [profileBackground, setProfileBackground] = useState<string>("bg-skrawl-black");
   const [profileBgStyle, setProfileBgStyle] = useState<Record<string, string>>({});
+  const [profileBgLoaded, setProfileBgLoaded] = useState<boolean>(false);
 
   // Load owned brush effects
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated) {
+      setOwnedBrushes([]);
+      setOwnedBrushesLoaded(true);
+      return;
+    }
     api
       .getOwnedItems()
       .then((items) => {
         const brushes = items.filter((item) => item.item_id.includes("brush")).map((item) => item.item_id);
         setOwnedBrushes(brushes);
+        setOwnedBrushesLoaded(true);
       })
-      .catch((err) => console.error("Failed to load owned brushes:", err));
+      .catch((err) => {
+        console.error("Failed to load owned brushes:", err);
+        setOwnedBrushesLoaded(true);
+      });
   }, [isAuthenticated, api]);
 
   // Load profile background (class or hex) and prepare style/class usage
@@ -52,6 +64,7 @@ const FreeDraw = () => {
     if (!isAuthenticated) {
       setProfileBackground("bg-skrawl-black");
       setProfileBgStyle({});
+      setProfileBgLoaded(true);
       return;
     }
     api
@@ -64,8 +77,12 @@ const FreeDraw = () => {
         } else {
           setProfileBgStyle({});
         }
+        setProfileBgLoaded(true);
       })
-      .catch((err) => console.error("Failed to load profile background for FreeDraw:", err));
+      .catch((err) => {
+        console.error("Failed to load profile background for FreeDraw:", err);
+        setProfileBgLoaded(true);
+      });
   }, [isAuthenticated, api]);
 
   // Sync erase mode with canvas
@@ -344,6 +361,8 @@ const FreeDraw = () => {
   // Determine dynamic background classes (exclude tailwind class if using hex style)
   const containerBgClass = profileBackground.startsWith("#") ? "" : profileBackground;
 
+  const ready = useDataReady([ownedBrushesLoaded, profileBgLoaded]);
+  if (!ready) return <Loading />;
   return (
     <div className={`min-h-screen ${containerBgClass} bg-[url('/src/assets/images/background.png')] bg-cover`} style={profileBgStyle}>
       <NavigationHeader />

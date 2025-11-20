@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import Loading from "./Components/Loading";
+import { useDataReady } from "./lib/useDataReady";
 import Minigames from "./Components/Minigames";
 import GameplayLayout from "./Components/GameplayLayout";
 import { Link } from "react-router-dom";
@@ -35,9 +36,11 @@ const Run = () => {
   const [lives, setLives] = useState<number>(3);
   const [configuredMinigameTime, setConfiguredMinigameTime] = useState<number>(() => timeForDifficulty(readDifficultyLevel()));
   const [timeRemaining, setTimeRemaining] = useState<number>(() => timeForDifficulty(readDifficultyLevel()));
-  const [completedCount, setCompletedCount] = useState<number>(0);
-  const [streak, setStreak] = useState<number>(0);
+  // Use refs for internal counters (no direct UI read required)
+  const completedCountRef = useRef<number>(0);
+  const streakRef = useRef<number>(0);
   const [ownedBadges, setOwnedBadges] = useState<Set<string>>(new Set());
+  const [badgesLoaded, setBadgesLoaded] = useState<boolean>(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -64,19 +67,22 @@ const Run = () => {
   useEffect(() => {
     if (isGuest) {
       setOwnedBadges(new Set());
+      setBadgesLoaded(true);
       return;
     }
-
     let cancelled = false;
     api
       .getMyBadges()
       .then((badges) => {
         if (!cancelled) {
           setOwnedBadges(new Set(badges.map((badge) => badge.code)));
+          setBadgesLoaded(true);
         }
       })
-      .catch((err) => console.error("Failed to load badges:", err));
-
+      .catch((err) => {
+        console.error("Failed to load badges:", err);
+        setBadgesLoaded(true);
+      });
     return () => {
       cancelled = true;
     };
@@ -108,23 +114,12 @@ const Run = () => {
         }
         return next;
       });
-      setCompletedCount((count) => {
-        const next = count + 1;
-        if (next === 1) {
-          maybeAward("FIRST_STEPS");
-        }
-        if (next === 20) {
-          maybeAward("SURVIVOR");
-        }
-        return next;
-      });
-      setStreak((currentStreak) => {
-        const next = currentStreak + 1;
-        if (next === 10) {
-          maybeAward("PERFECT_10");
-        }
-        return next;
-      });
+      // Update counters & award badges
+      completedCountRef.current += 1;
+      if (completedCountRef.current === 1) maybeAward("FIRST_STEPS");
+      if (completedCountRef.current === 20) maybeAward("SURVIVOR");
+      streakRef.current += 1;
+      if (streakRef.current === 10) maybeAward("PERFECT_10");
       // Check for speed demon badge (more than 5 seconds remaining)
       if (timeRemaining > 5) {
         maybeAward("SPEED_DEMON");
@@ -134,7 +129,7 @@ const Run = () => {
         api.incrementCoins(reward).catch((err) => console.error("Failed to save coins:", err));
       }
     } else {
-      setStreak(0);
+      streakRef.current = 0;
       setLives((l) => {
         const nextLives = l - 1;
         if (nextLives <= 0) {
@@ -154,17 +149,16 @@ const Run = () => {
     setGameOver(false);
     setCoins(0);
     setLives(3);
-    setCompletedCount(0);
-    setStreak(0);
+    completedCountRef.current = 0;
+    streakRef.current = 0;
   };
 
   const handleStartOver = () => {
     handleStart();
   };
 
-  if (isLoading) {
-    return <Loading />;
-  }
+  const ready = useDataReady([!isLoading, badgesLoaded]);
+  if (!ready) return <Loading />;
 
   return (
     <GameplayLayout lives={lives} timeRemaining={timeRemaining} userImage={user?.picture} userName={user?.name ?? (isGuest ? "Guest" : undefined)}>

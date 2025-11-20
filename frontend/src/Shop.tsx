@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import NavigationHeader from "./Components/NavigationHeader";
 import Loading from "./Components/Loading";
+import { useDataReady } from "./lib/useDataReady";
 import { useApi } from "./lib/api";
 import { useTheme } from "./lib/theme";
 import { useAuth0 } from "@auth0/auth0-react";
@@ -108,6 +109,8 @@ const Shop = () => {
   // Use null before data loads to avoid flashing 0
   const [coins, setCoins] = useState<number | null>(null);
   const [owned, setOwned] = useState<string[]>([]);
+  const [coinsLoaded, setCoinsLoaded] = useState<boolean>(false);
+  const [ownedLoaded, setOwnedLoaded] = useState<boolean>(false);
   const [equippedBrush, setEquippedBrush] = useState<string>(() => {
     if (typeof window === "undefined") return "smooth";
     return localStorage.getItem("equippedBrush") || "smooth";
@@ -121,38 +124,43 @@ const Shop = () => {
 
   // Load coins and owned items from backend on mount; use sessionStorage to mitigate flicker on reloads
   useEffect(() => {
-    if (isLoading) return;
-    if (!isAuthenticated) return;
-
+    if (isLoading || !isAuthenticated) return;
     const cachedCoins = sessionStorage.getItem("shop_coins");
     const cachedOwned = sessionStorage.getItem("shop_owned");
-    if (cachedCoins) setCoins(Number(cachedCoins));
+    if (cachedCoins) {
+      setCoins(Number(cachedCoins));
+      setCoinsLoaded(true);
+    }
     if (cachedOwned) {
       try {
         setOwned(JSON.parse(cachedOwned));
+        setOwnedLoaded(true);
       } catch {
-        /* ignore parse errors */
+        /* ignore */
       }
     }
-
     Promise.all([api.getCoins(), api.getOwnedItems()])
       .then(([coinsData, ownedData]) => {
         setCoins(coinsData.coins);
+        setCoinsLoaded(true);
         sessionStorage.setItem("shop_coins", String(coinsData.coins));
         const ownedIds = ownedData.map((o) => o.item_id);
         setOwned(ownedIds);
+        setOwnedLoaded(true);
         sessionStorage.setItem("shop_owned", JSON.stringify(ownedIds));
       })
       .catch((err) => console.error("Failed to load shop data:", err));
-  }, [isLoading, isAuthenticated]);
+  }, [isLoading, isAuthenticated, api]);
 
   const items = useMemo(() => CATALOG.filter((i) => i.category === activeTab), [activeTab]);
   const isOwned = (id: string) => id === "smooth-brush" || id === "default-theme" || owned.includes(id);
   const canAfford = (price: number) => (coins ?? 0) >= price;
 
-  if (isLoading) {
-    return <Loading />;
-  }
+  const ready = useDataReady([
+    !isLoading,
+    !isAuthenticated || (coinsLoaded && ownedLoaded), // if authenticated require data; guests skip
+  ]);
+  if (!ready) return <Loading />;
 
   const handleEquip = (itemId: string) => {
     const styleId = BRUSH_STYLE_MAP[itemId] || itemId; // fallback to itemId for future styles

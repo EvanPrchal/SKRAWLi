@@ -1,44 +1,14 @@
-import { useEffect, useState } from "react";
-
-import { useApi } from "../lib/api";
-
 type BadgeDefinition = {
   code: string;
   name: string;
   description: string | null;
 };
 
-const OwnedBadges = () => {
-  const api = useApi();
-  const [allBadges, setAllBadges] = useState<BadgeDefinition[]>([]);
-  const [ownedCodes, setOwnedCodes] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    Promise.all([api.listBadges(), api.getMyBadges()])
-      .then(([definitions, owned]) => {
-        if (!cancelled) {
-          setAllBadges(definitions);
-          setOwnedCodes(owned.map((badge) => badge.code));
-        }
-      })
-      .catch((err) => console.error("Failed to load badges:", err))
-      .finally(() => {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [api]);
-
-  if (isLoading) {
-    return <div className="text-body font-body text-skrawl-purple">Loading badges...</div>;
-  }
-
+type OwnedBadgesProps = {
+  allBadges: BadgeDefinition[];
+  ownedCodes: string[];
+};
+const OwnedBadges = ({ allBadges, ownedCodes }: OwnedBadgesProps) => {
   if (!allBadges.length) {
     return <div className="text-body font-body text-skrawl-purple">No badges configured yet.</div>;
   }

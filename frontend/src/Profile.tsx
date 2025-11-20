@@ -6,24 +6,53 @@ import { Tab } from "@headlessui/react";
 import ProfileInfo from "./Components/ProfileInfo";
 import OwnedBadges from "./Components/OwnedBadges";
 import { useApi } from "./lib/api";
+import { useDataReady } from "./lib/useDataReady";
 
 const Profile = () => {
   const { isLoading } = useAuth0();
   const api = useApi();
   const [profileBackground, setProfileBackground] = useState<string>("bg-skrawl-black");
+  const [backgroundLoaded, setBackgroundLoaded] = useState<boolean>(false);
+  const [badgesLoaded, setBadgesLoaded] = useState<boolean>(false);
+  const [allBadges, setAllBadges] = useState<any[]>([]);
+  const [ownedCodes, setOwnedCodes] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!isLoading) {
-      api
-        .getProfileBackground()
-        .then((data) => setProfileBackground(data.profile_background || "bg-skrawl-black"))
-        .catch((err) => console.error("Failed to load background:", err));
-    }
-  }, [isLoading]);
+    if (isLoading) return;
+    let cancelled = false;
+    // Fetch background
+    api
+      .getProfileBackground()
+      .then((data) => {
+        if (!cancelled) {
+          setProfileBackground(data.profile_background || "bg-skrawl-black");
+          setBackgroundLoaded(true);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load background:", err);
+        setBackgroundLoaded(true);
+      });
+    // Fetch badge data for gating
+    Promise.all([api.listBadges(), api.getMyBadges()])
+      .then(([definitions, owned]) => {
+        if (!cancelled) {
+          setAllBadges(definitions);
+          setOwnedCodes(owned.map((b: any) => b.code));
+          setBadgesLoaded(true);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load badges:", err);
+        setBadgesLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoading, api]);
 
-  if (isLoading) {
-    return <Loading />;
-  }
+  const ready = useDataReady([!isLoading, backgroundLoaded, badgesLoaded]);
+  if (!ready) return <Loading />;
 
   // Check if it's a hex color or Tailwind class
   const isHexColor = profileBackground.startsWith("#");
@@ -55,7 +84,7 @@ const Profile = () => {
                 <ProfileInfo profileBackground={profileBackground} onBackgroundChange={setProfileBackground} />
               </Tab.Panel>
               <Tab.Panel className="h-full w-full flex items-center justify-center p-4 overflow-y-auto">
-                <OwnedBadges />
+                <OwnedBadges allBadges={allBadges} ownedCodes={ownedCodes} />
               </Tab.Panel>
             </Tab.Panels>
           </Tab.Group>
