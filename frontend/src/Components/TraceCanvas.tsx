@@ -19,6 +19,18 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
   const [isDrawing, setIsDrawing] = useState(false);
   const userPointsRef = useRef<Point[]>([]);
   const offsetRef = useRef<{ left: number; top: number }>({ left: 0, top: 0 });
+  const [brushType, setBrushType] = useState<string>("smooth");
+
+  // Listen for brush changes from shop
+  useEffect(() => {
+    const updateBrush = () => {
+      const equipped = localStorage.getItem("equippedBrush") || "smooth";
+      setBrushType(equipped);
+    };
+    updateBrush();
+    window.addEventListener("brushUpdate", updateBrush);
+    return () => window.removeEventListener("brushUpdate", updateBrush);
+  }, []);
 
   // Get the timer setting from localStorage, default to false if not set
   const showTimer = localStorage.getItem("showTimer") === "true";
@@ -169,14 +181,55 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
     // draw user path
     const up = userPointsRef.current;
     if (up.length > 0) {
-      ctx.beginPath();
-      ctx.moveTo(up[0].x, up[0].y);
-      for (let i = 1; i < up.length; i++) {
-        ctx.lineTo(up[i].x, up[i].y);
+      if (brushType === "pixel") {
+        // Pixel brush: draw blocky squares
+        ctx.fillStyle = "#241f21";
+        const pixelSize = 8;
+        for (let i = 0; i < up.length; i++) {
+          const pt = up[i];
+          ctx.fillRect(pt.x - pixelSize / 2, pt.y - pixelSize / 2, pixelSize, pixelSize);
+          // Interpolate between points to avoid gaps
+          if (i > 0) {
+            const prev = up[i - 1];
+            const dx = pt.x - prev.x;
+            const dy = pt.y - prev.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const steps = Math.ceil(dist / (pixelSize * 0.6));
+            for (let j = 1; j < steps; j++) {
+              const t = j / steps;
+              const ix = prev.x + dx * t;
+              const iy = prev.y + dy * t;
+              ctx.fillRect(ix - pixelSize / 2, iy - pixelSize / 2, pixelSize, pixelSize);
+            }
+          }
+        }
+      } else if (brushType === "rainbow") {
+        // Rainbow brush: continuous gradient-like stroke by segment coloring
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.lineWidth = 6;
+        // Draw each segment with a hue that progresses along the path
+        for (let i = 1; i < up.length; i++) {
+          const prev = up[i - 1];
+          const pt = up[i];
+          const hue = (i * 12) % 360; // step through hues for a rainbow cycle
+          ctx.strokeStyle = `hsl(${hue}, 100%, 50%)`;
+          ctx.beginPath();
+          ctx.moveTo(prev.x, prev.y);
+          ctx.lineTo(pt.x, pt.y);
+          ctx.stroke();
+        }
+      } else {
+        // Smooth brush (default)
+        ctx.beginPath();
+        ctx.moveTo(up[0].x, up[0].y);
+        for (let i = 1; i < up.length; i++) {
+          ctx.lineTo(up[i].x, up[i].y);
+        }
+        ctx.strokeStyle = "#241f21";
+        ctx.lineWidth = 5;
+        ctx.stroke();
       }
-      ctx.strokeStyle = "#241f21";
-      ctx.lineWidth = 5;
-      ctx.stroke();
     }
   };
 

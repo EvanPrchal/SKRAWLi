@@ -13,29 +13,31 @@ type CatalogItem = {
   price: number;
   category: Category;
   colors?: string[]; // Optional color palette preview for themes
+  preview?: string; // Optional preview type (e.g., "pixel")
 };
 
 const CATALOG: CatalogItem[] = [
   // Brushes
   {
-    id: "neon-glow-brush",
-    name: "Neon Glow Brush",
-    description: "A vibrant brush that adds a glowing neon effect to your strokes.",
-    price: 150,
+    id: "smooth-brush",
+    name: "Smooth Brush",
+    description: "Default smooth drawing brush.",
+    price: 0,
     category: "Brushes",
+  },
+  {
+    id: "pixel-brush",
+    name: "Pixel Brush",
+    description: "Draw with a retro pixelated brush for blocky, digital art.",
+    price: 120,
+    category: "Brushes",
+    preview: "pixel",
   },
   {
     id: "rainbow-brush",
     name: "Rainbow Brush",
     description: "Paint with all the colors of the rainbow in a single stroke.",
     price: 200,
-    category: "Brushes",
-  },
-  {
-    id: "spray-paint-brush",
-    name: "Spray Paint Brush",
-    description: "Create a spray-painted texture with scattered dots and gradients.",
-    price: 175,
     category: "Brushes",
   },
 
@@ -81,6 +83,14 @@ const CATALOG: CatalogItem[] = [
 
 const TABS: Category[] = ["Brushes", "Themes", "Characters", "Misc"];
 
+// Map each brush catalog id to a unique internal style identifier used by canvases.
+// Non-pixel styles currently render with the smooth brush implementation.
+const BRUSH_STYLE_MAP: Record<string, string> = {
+  "smooth-brush": "smooth",
+  "pixel-brush": "pixel",
+  "rainbow-brush": "rainbow",
+};
+
 const Shop = () => {
   const { isLoading, isAuthenticated } = useAuth0();
   const api = useApi();
@@ -88,6 +98,16 @@ const Shop = () => {
   // Use null before data loads to avoid flashing 0
   const [coins, setCoins] = useState<number | null>(null);
   const [owned, setOwned] = useState<string[]>([]);
+  const [equippedBrush, setEquippedBrush] = useState<string>(() => {
+    if (typeof window === "undefined") return "smooth";
+    return localStorage.getItem("equippedBrush") || "smooth";
+  });
+
+  // Save equipped brush to localStorage and dispatch event
+  useEffect(() => {
+    localStorage.setItem("equippedBrush", equippedBrush);
+    window.dispatchEvent(new Event("brushUpdate"));
+  }, [equippedBrush]);
 
   // Load coins and owned items from backend on mount; use sessionStorage to mitigate flicker on reloads
   useEffect(() => {
@@ -117,12 +137,17 @@ const Shop = () => {
   }, [isLoading, isAuthenticated]);
 
   const items = useMemo(() => CATALOG.filter((i) => i.category === activeTab), [activeTab]);
-  const isOwned = (id: string) => owned.includes(id);
+  const isOwned = (id: string) => id === "smooth-brush" || owned.includes(id);
   const canAfford = (price: number) => (coins ?? 0) >= price;
 
   if (isLoading) {
     return <Loading />;
   }
+
+  const handleEquip = (itemId: string) => {
+    const styleId = BRUSH_STYLE_MAP[itemId] || itemId; // fallback to itemId for future styles
+    setEquippedBrush(styleId);
+  };
 
   const handleBuy = async (item: CatalogItem) => {
     if (isOwned(item.id) || !canAfford(item.price)) return;
@@ -219,6 +244,12 @@ const Shop = () => {
                               <div key={i} className="w-6 h-6 rounded border border-gray-300" style={{ backgroundColor: color }} title={color} />
                             ))}
                           </div>
+                        ) : item.preview === "pixel" ? (
+                          <div className="flex gap-1">
+                            {[0, 1, 2, 3, 4].map((i) => (
+                              <div key={i} className="w-2 h-2 bg-skrawl-black border border-gray-300" />
+                            ))}
+                          </div>
                         ) : item.id === "color-picker" ? (
                           <div
                             className="w-7 h-7 rounded-full border border-gray-300 shadow-sm"
@@ -233,20 +264,37 @@ const Shop = () => {
                       </td>
                       <td className="px-4 py-3 font-body">{item.price} coins</td>
                       <td className="px-4 py-3">
-                        <div className="flex justify-end">
-                          <button
-                            onClick={() => handleBuy(item)}
-                            disabled={isOwned(item.id) || !canAfford(item.price)}
-                            className={`py-2 px-4 rounded-md font-body transition-colors ${
-                              isOwned(item.id)
-                                ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                                : canAfford(item.price)
-                                ? "bg-skrawl-purple text-white hover:bg-skrawl-magenta"
-                                : "bg-gray-500/40 text-white/70 cursor-not-allowed"
-                            }`}
-                          >
-                            {isOwned(item.id) ? "Owned" : canAfford(item.price) ? "Buy" : "Not enough coins"}
-                          </button>
+                        <div className="flex justify-end gap-2">
+                          {isOwned(item.id) && item.category === "Brushes" ? (
+                            (() => {
+                              const brushStyle = BRUSH_STYLE_MAP[item.id] || item.id;
+                              const isEquipped = equippedBrush === brushStyle;
+                              return (
+                                <button
+                                  onClick={() => handleEquip(item.id)}
+                                  className={`py-2 px-4 rounded-md font-body transition-colors ${
+                                    isEquipped ? "bg-skrawl-cyan text-white" : "bg-skrawl-purple text-white hover:bg-skrawl-magenta"
+                                  }`}
+                                >
+                                  {isEquipped ? "✓ Equipped" : "Equip"}
+                                </button>
+                              );
+                            })()
+                          ) : (
+                            <button
+                              onClick={() => handleBuy(item)}
+                              disabled={isOwned(item.id) || !canAfford(item.price)}
+                              className={`py-2 px-4 rounded-md font-body transition-colors ${
+                                isOwned(item.id)
+                                  ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                                  : canAfford(item.price)
+                                  ? "bg-skrawl-purple text-white hover:bg-skrawl-magenta"
+                                  : "bg-gray-500/40 text-white/70 cursor-not-allowed"
+                              }`}
+                            >
+                              {isOwned(item.id) ? "Owned" : canAfford(item.price) ? "Buy" : "Not enough coins"}
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

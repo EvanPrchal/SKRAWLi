@@ -17,7 +17,16 @@ const Credits = () => {
         </section>
         <section className="text-header font-header flex flex-col items-center">
           Doodle Background <hr className="w-full"></hr>
-          <h2 className="text-button font-body">superwerehog990</h2>
+          <a
+            className="text-button font-body hover:text-skrawl-purple transition-colors"
+            href="https://www.instagram.com/superwerehog_990/"
+            target="_blank"
+          >
+            superwerehog_990
+          </a>
+          <a className="text-button font-body hover:text-skrawl-purple transition-colors" href="https://kmariscal5132.wixstudio.com/" target="_blank">
+            portfolio
+          </a>
         </section>
         <section className="text-header font-header flex flex-col items-center">
           Main Color Scheme <hr className="w-full"></hr>

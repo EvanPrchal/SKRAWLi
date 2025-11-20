@@ -7,10 +7,12 @@ import { useAuth0 } from "@auth0/auth0-react";
 
 type SketchRef = any; // fallback to keep build smooth if type is missing
 
-type BrushEffect = "normal" | "neon-glow" | "rainbow" | "spray-paint";
+type BrushEffect = "normal" | "neon-glow" | "rainbow" | "spray-paint" | "pixel";
 
 const FreeDraw = () => {
   const canvasRef = useRef<SketchRef>(null);
+  const pixelCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const rainbowCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const { theme } = useTheme();
   const api = useApi();
   const { isAuthenticated } = useAuth0();
@@ -23,9 +25,12 @@ const FreeDraw = () => {
   const [presets, setPresets] = useState<string[]>(["#1C0667", "#E81E65", "#FF9F1C", "#2EC4B6", "#241f21", "#ffffff"]);
   const [ownedBrushes, setOwnedBrushes] = useState<string[]>([]);
   const [activeBrush, setActiveBrush] = useState<BrushEffect>("normal");
-  const [rainbowHue, setRainbowHue] = useState<number>(0);
-  const rainbowIntervalRef = useRef<number | null>(null);
+  // Rainbow preview hue derived on the fly; no state/interval needed now.
   const isDrawingRef = useRef<boolean>(false);
+  const [pixelStrokes, setPixelStrokes] = useState<{ x: number; y: number; color: string; size: number }[][]>([]);
+  const pixelCurrentStrokeRef = useRef<{ x: number; y: number; color: string; size: number }[]>([]);
+  const [rainbowStrokes, setRainbowStrokes] = useState<{ x: number; y: number; hue: number; size: number; erase?: boolean }[][]>([]);
+  const rainbowCurrentStrokeRef = useRef<{ x: number; y: number; hue: number; size: number; erase?: boolean }[]>([]);
 
   // Load owned brush effects
   useEffect(() => {
@@ -46,51 +51,15 @@ const FreeDraw = () => {
     }
   }, [isEraser]);
 
-  // Rainbow brush effect - cycle hue continuously and update canvas
-  useEffect(() => {
-    if (activeBrush !== "rainbow" || isEraser) {
-      if (rainbowIntervalRef.current) {
-        clearInterval(rainbowIntervalRef.current);
-        rainbowIntervalRef.current = null;
-      }
-      return;
-    }
-
-    // Start continuous color cycling for rainbow effect
-    if (!rainbowIntervalRef.current) {
-      rainbowIntervalRef.current = window.setInterval(() => {
-        setRainbowHue((prev) => (prev + 3) % 360);
-      }, 16); // ~60fps
-    }
-
-    return () => {
-      if (rainbowIntervalRef.current) {
-        clearInterval(rainbowIntervalRef.current);
-        rainbowIntervalRef.current = null;
-      }
-    };
-  }, [activeBrush, isEraser]);
-
-  // Force update canvas stroke color for rainbow brush
-  useEffect(() => {
-    if (activeBrush === "rainbow" && !isEraser && canvasRef.current) {
-      const newColor = `hsl(${rainbowHue}, 100%, 60%)`;
-      // Access the internal canvas elements to update stroke style
-      const canvasElement = canvasRef.current;
-      if (canvasElement && canvasElement.canvas) {
-        const ctx = canvasElement.canvas.getContext("2d");
-        if (ctx) {
-          ctx.strokeStyle = newColor;
-        }
-      }
-    }
-  }, [rainbowHue, activeBrush, isEraser]);
+  // Rainbow brush now handled via custom canvas; interval logic removed.
 
   // Get the effective color based on active brush effect
   const getEffectiveColor = () => {
     if (isEraser) return "#ffffff";
+    // Rainbow color derived per segment; base color fallback for UI previews.
     if (activeBrush === "rainbow") {
-      return `hsl(${rainbowHue}, 100%, 60%)`;
+      const dynamicHue = Math.floor((Date.now() / 30) % 360);
+      return `hsl(${dynamicHue}, 100%, 60%)`;
     }
     return color;
   };
@@ -124,12 +93,79 @@ const FreeDraw = () => {
     if (themedPresets.length) setPresets(themedPresets);
   }, [theme]);
 
-  const handleClear = () => canvasRef.current?.clearCanvas?.();
+  // Pixel canvas management
+  const redrawPixelCanvas = () => {
+    const canvas = pixelCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const stroke of pixelStrokes) {
+      for (const sq of stroke) {
+        ctx.fillStyle = sq.color;
+        ctx.fillRect(sq.x - sq.size / 2, sq.y - sq.size / 2, sq.size, sq.size);
+      }
+    }
+  };
+
+  const ensurePixelCanvasSize = () => {
+    const canvas = pixelCanvasRef.current;
+    if (!canvas || !canvas.parentElement) return;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+  };
+
+  useEffect(() => {
+    if (activeBrush === "pixel") {
+      ensurePixelCanvasSize();
+      window.addEventListener("resize", ensurePixelCanvasSize);
+      return () => window.removeEventListener("resize", ensurePixelCanvasSize);
+    }
+    if (activeBrush === "rainbow") {
+      const resize = () => {
+        const canvas = rainbowCanvasRef.current;
+        if (!canvas || !canvas.parentElement) return;
+        const rect = canvas.parentElement.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        redrawRainbowCanvas();
+      };
+      resize();
+      window.addEventListener("resize", resize);
+      return () => window.removeEventListener("resize", resize);
+    }
+  }, [activeBrush]);
+
+  useEffect(() => {
+    if (activeBrush === "pixel") {
+      redrawPixelCanvas();
+    }
+  }, [pixelStrokes, activeBrush]);
+
+  const handleClear = () => {
+    if (activeBrush === "pixel") {
+      setPixelStrokes([]);
+      redrawPixelCanvas();
+    } else if (activeBrush === "rainbow") {
+      setRainbowStrokes([]);
+      redrawRainbowCanvas();
+    } else {
+      canvasRef.current?.clearCanvas?.();
+    }
+  };
   const handleUndo = () => canvasRef.current?.undo?.();
   const handleRedo = () => canvasRef.current?.redo?.();
   const handleSave = async () => {
     try {
-      const dataUrl: string = await canvasRef.current?.exportImage?.("png");
+      let dataUrl: string | undefined;
+      if (activeBrush === "pixel" && pixelCanvasRef.current) {
+        dataUrl = pixelCanvasRef.current.toDataURL("image/png");
+      } else if (activeBrush === "rainbow" && rainbowCanvasRef.current) {
+        dataUrl = rainbowCanvasRef.current.toDataURL("image/png");
+      } else {
+        dataUrl = await canvasRef.current?.exportImage?.("png");
+      }
       if (!dataUrl) return;
       const a = document.createElement("a");
       a.href = dataUrl;
@@ -162,12 +198,123 @@ const FreeDraw = () => {
   }, []);
 
   // Handle drawing state for rainbow brush
-  const handlePointerDown = () => {
+  const handlePointerDown = (e?: React.PointerEvent) => {
     isDrawingRef.current = true;
+    if (activeBrush === "pixel" && pixelCanvasRef.current && e) {
+      pixelCurrentStrokeRef.current = [];
+      addPixelPoint(e);
+    } else if (activeBrush === "rainbow" && rainbowCanvasRef.current && e) {
+      rainbowCurrentStrokeRef.current = [];
+      addRainbowPoint(e);
+    }
   };
 
   const handlePointerUp = () => {
     isDrawingRef.current = false;
+    if (activeBrush === "pixel" && pixelCurrentStrokeRef.current.length) {
+      setPixelStrokes((prev) => [...prev, pixelCurrentStrokeRef.current]);
+      pixelCurrentStrokeRef.current = [];
+    } else if (activeBrush === "rainbow" && rainbowCurrentStrokeRef.current.length) {
+      setRainbowStrokes((prev) => [...prev, rainbowCurrentStrokeRef.current]);
+      rainbowCurrentStrokeRef.current = [];
+    }
+  };
+
+  const addPixelPoint = (e: React.PointerEvent) => {
+    const canvas = pixelCanvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const sq = { x, y, color: getEffectiveColor(), size };
+    pixelCurrentStrokeRef.current.push(sq);
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.fillStyle = sq.color;
+      ctx.fillRect(sq.x - sq.size / 2, sq.y - sq.size / 2, sq.size, sq.size);
+    }
+    // Interpolate for smooth pixel trail
+    if (pixelCurrentStrokeRef.current.length > 1) {
+      const a = pixelCurrentStrokeRef.current[pixelCurrentStrokeRef.current.length - 2];
+      const b = sq;
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const step = size * 0.6;
+      if (dist > step) {
+        const steps = Math.floor(dist / step);
+        for (let i = 1; i < steps; i++) {
+          const t = i / steps;
+          const ix = a.x + dx * t;
+          const iy = a.y + dy * t;
+          const interp = { x: ix, y: iy, color: sq.color, size };
+          pixelCurrentStrokeRef.current.push(interp);
+          if (ctx) ctx.fillRect(interp.x - interp.size / 2, interp.y - interp.size / 2, interp.size, interp.size);
+        }
+      }
+    }
+  };
+
+  const handlePixelPointerMove = (e: React.PointerEvent) => {
+    if (!isDrawingRef.current) return;
+    addPixelPoint(e);
+  };
+
+  const redrawRainbowCanvas = () => {
+    const canvas = rainbowCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const stroke of rainbowStrokes) {
+      for (let i = 1; i < stroke.length; i++) {
+        const a = stroke[i - 1];
+        const b = stroke[i];
+        const hue = b.hue;
+        ctx.strokeStyle = a.erase || b.erase ? "#ffffff" : `hsl(${hue}, 100%, 50%)`;
+        ctx.lineWidth = b.size;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+    }
+  };
+
+  const addRainbowPoint = (e: React.PointerEvent) => {
+    const canvas = rainbowCanvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const nextHue = (rainbowCurrentStrokeRef.current.length * 12) % 360;
+    const pt = { x, y, hue: nextHue, size: size, erase: isEraser };
+    rainbowCurrentStrokeRef.current.push(pt);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    if (rainbowCurrentStrokeRef.current.length > 1) {
+      const a = rainbowCurrentStrokeRef.current[rainbowCurrentStrokeRef.current.length - 2];
+      const b = pt;
+      ctx.strokeStyle = pt.erase ? "#ffffff" : `hsl(${b.hue}, 100%, 50%)`;
+      ctx.lineWidth = size;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    } else {
+      // Single point (draw small dot)
+      ctx.fillStyle = pt.erase ? "#ffffff" : `hsl(${pt.hue}, 100%, 50%)`;
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, size / 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  };
+
+  const handleRainbowPointerMove = (e: React.PointerEvent) => {
+    if (!isDrawingRef.current) return;
+    addRainbowPoint(e);
   };
 
   return (
@@ -179,27 +326,48 @@ const FreeDraw = () => {
           {/* Canvas area (left) */}
           <div
             className="flex-1 bg-skrawl-white rounded-md border border-skrawl-purple/20 overflow-hidden flex relative"
-            onPointerDown={handlePointerDown}
+            onPointerDown={(e) => handlePointerDown(e)}
             onPointerUp={handlePointerUp}
           >
-            <ReactSketchCanvas
-              ref={canvasRef}
-              style={{ flex: 1, minHeight: 0 }}
-              width="100%"
-              height="100%"
-              strokeWidth={getEffectiveStrokeWidth()}
-              strokeColor={getEffectiveColor()}
-              canvasColor="#ffffff"
-              withTimestamp={false}
-              eraserWidth={size}
-              className={activeBrush === "neon-glow" ? "neon-glow-canvas" : activeBrush === "spray-paint" ? "spray-paint-canvas" : ""}
-            />
+            {activeBrush === "pixel" ? (
+              <canvas
+                ref={pixelCanvasRef}
+                onPointerDown={(e) => handlePointerDown(e)}
+                onPointerMove={handlePixelPointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerLeave={handlePointerUp}
+                style={{ flex: 1, touchAction: "none", width: "100%", height: "100%", backgroundColor: "#ffffff" }}
+              />
+            ) : activeBrush === "rainbow" ? (
+              <canvas
+                ref={rainbowCanvasRef}
+                onPointerDown={(e) => handlePointerDown(e)}
+                onPointerMove={handleRainbowPointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerLeave={handlePointerUp}
+                style={{ flex: 1, touchAction: "none", width: "100%", height: "100%", backgroundColor: "#ffffff" }}
+              />
+            ) : (
+              <ReactSketchCanvas
+                ref={canvasRef}
+                style={{ flex: 1, minHeight: 0 }}
+                width="100%"
+                height="100%"
+                strokeWidth={getEffectiveStrokeWidth()}
+                strokeColor={getEffectiveColor()}
+                canvasColor="#ffffff"
+                withTimestamp={false}
+                eraserWidth={size}
+                className={activeBrush === "neon-glow" ? "neon-glow-canvas" : activeBrush === "spray-paint" ? "spray-paint-canvas" : ""}
+              />
+            )}
             {/* Brush effect indicator */}
             {activeBrush !== "normal" && !isEraser && (
               <div className="absolute top-2 left-2 bg-black/70 text-white px-3 py-1 rounded-full text-xs font-body">
                 {activeBrush === "neon-glow" && "✨ Neon Glow"}
                 {activeBrush === "rainbow" && "🌈 Rainbow"}
                 {activeBrush === "spray-paint" && "💨 Spray Paint"}
+                {activeBrush === "pixel" && "🟦 Pixel"}
               </div>
             )}
           </div>
@@ -219,6 +387,7 @@ const FreeDraw = () => {
                   {ownedBrushes.includes("neon-glow-brush") && <option value="neon-glow">✨ Neon Glow</option>}
                   {ownedBrushes.includes("rainbow-brush") && <option value="rainbow">🌈 Rainbow</option>}
                   {ownedBrushes.includes("spray-paint-brush") && <option value="spray-paint">💨 Spray Paint</option>}
+                  {ownedBrushes.includes("pixel-brush") && <option value="pixel">🟦 Pixel Brush</option>}
                 </select>
               </div>
             )}
