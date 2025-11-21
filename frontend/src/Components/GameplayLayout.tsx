@@ -13,7 +13,7 @@ const GameplayLayout: React.FC<GameplayLayoutProps> = ({ lives, timeRemaining, u
     <div className="flex flex-col h-screen bg-skrawl-cyan bg-[url('/src/assets/images/background.png')] bg-cover items-center justify-center">
       <section className="gameplay-ui w-4/6 bg-skrawl-white mb-2 rounded-t-lg text-skrawl-purple flex justify-around font-header text-header items-center">
         <div className="lives-ui flex">
-          <img src="./src/assets/svgs/lives.png" alt="Lives" />
+          <img src="./src/assets/svgs/lives.svg" alt="Lives" />
           <h1>x{lives}</h1>
         </div>
         <img src={"./src/assets/images/pint2.png"} alt={userName} className="w-[10%] self-center" />

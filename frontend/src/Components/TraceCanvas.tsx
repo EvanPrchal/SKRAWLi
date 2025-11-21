@@ -18,6 +18,14 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const userPointsRef = useRef<Point[]>([]);
+  // Accumulate completed strokes for current shape so drawings persist and coverage can build progressively.
+  const completedStrokesRef = useRef<{ points: Point[]; brush: string }[]>([]);
+  // Strokes from past shapes retained for visual continuity (excluded from evaluation for new shape)
+  const pastShapeStrokesRef = useRef<{ shapeIndex: number; strokes: { points: Point[]; brush: string }[] }[]>([]);
+  const lastShapeIndexRef = useRef<number>(currentShapeIndex);
+  const currentStrokeBrushRef = useRef<string>("smooth");
+  // Track whether current shape was successfully completed; used to decide archiving.
+  const shapeCompletedRef = useRef<boolean>(false);
   const offsetRef = useRef<{ left: number; top: number }>({ left: 0, top: 0 });
   const [brushType, setBrushType] = useState<string>("smooth");
 
@@ -82,6 +90,7 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
     updateCanvasSize();
     const pt = getRelativePoint(e);
     userPointsRef.current = [pt];
+    currentStrokeBrushRef.current = brushType; // capture brush at stroke start
     setIsDrawing(true);
   };
 
@@ -95,8 +104,19 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
   const endDraw = () => {
     if (!isDrawing) return;
     setIsDrawing(false);
-    const success = evaluateTrace(userPointsRef.current, currentShape, threshold);
+    // Snapshot current stroke points
+    const strokePoints = [...userPointsRef.current];
+    // Evaluate only this stroke attempt (failed stroke shouldn't persist)
+    const success = evaluateTrace(strokePoints, currentShape, threshold);
     onComplete(success, currentShape.reward);
+    if (success) {
+      // Persist successful stroke for this shape
+      completedStrokesRef.current.push({ points: strokePoints, brush: currentStrokeBrushRef.current });
+      shapeCompletedRef.current = true;
+    } else {
+      // Failed attempt: do not keep its points
+      // (Optionally could provide visual feedback here)
+    }
     userPointsRef.current = [];
     drawCanvas();
   };
@@ -178,19 +198,17 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
 
     overGuides.forEach((shape) => drawShape(ctx, shape));
 
-    // draw user path
-    const up = userPointsRef.current;
-    if (up.length > 0) {
-      if (brushType === "pixel") {
-        // Pixel brush: draw blocky squares
+    // Helper to render a stroke
+    const renderStroke = (pts: Point[], brush: string) => {
+      if (!pts.length) return;
+      if (brush === "pixel") {
         ctx.fillStyle = "#241f21";
         const pixelSize = 8;
-        for (let i = 0; i < up.length; i++) {
-          const pt = up[i];
+        for (let i = 0; i < pts.length; i++) {
+          const pt = pts[i];
           ctx.fillRect(pt.x - pixelSize / 2, pt.y - pixelSize / 2, pixelSize, pixelSize);
-          // Interpolate between points to avoid gaps
           if (i > 0) {
-            const prev = up[i - 1];
+            const prev = pts[i - 1];
             const dx = pt.x - prev.x;
             const dy = pt.y - prev.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
@@ -203,16 +221,14 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
             }
           }
         }
-      } else if (brushType === "rainbow") {
-        // Rainbow brush: continuous gradient-like stroke by segment coloring
+      } else if (brush === "rainbow") {
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
         ctx.lineWidth = 6;
-        // Draw each segment with a hue that progresses along the path
-        for (let i = 1; i < up.length; i++) {
-          const prev = up[i - 1];
-          const pt = up[i];
-          const hue = (i * 12) % 360; // step through hues for a rainbow cycle
+        for (let i = 1; i < pts.length; i++) {
+          const prev = pts[i - 1];
+          const pt = pts[i];
+          const hue = (i * 12) % 360;
           ctx.strokeStyle = `hsl(${hue}, 100%, 50%)`;
           ctx.beginPath();
           ctx.moveTo(prev.x, prev.y);
@@ -220,20 +236,44 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
           ctx.stroke();
         }
       } else {
-        // Smooth brush (default)
         ctx.beginPath();
-        ctx.moveTo(up[0].x, up[0].y);
-        for (let i = 1; i < up.length; i++) {
-          ctx.lineTo(up[i].x, up[i].y);
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < pts.length; i++) {
+          ctx.lineTo(pts[i].x, pts[i].y);
         }
         ctx.strokeStyle = "#241f21";
         ctx.lineWidth = 5;
         ctx.stroke();
       }
+    };
+    // Render strokes from past shapes first
+    for (const past of pastShapeStrokesRef.current) {
+      for (const stroke of past.strokes) {
+        renderStroke(stroke.points, stroke.brush);
+      }
     }
+    // Render persisted strokes for current shape
+    for (const stroke of completedStrokesRef.current) {
+      renderStroke(stroke.points, stroke.brush);
+    }
+    // Render current in-progress stroke
+    renderStroke(userPointsRef.current, brushType);
   };
 
   useEffect(() => {
+    // Archive strokes from previous shape so they remain visible.
+    if (currentShapeIndex !== lastShapeIndexRef.current) {
+      // Only archive if shape completed successfully; otherwise discard strokes.
+      if (shapeCompletedRef.current && completedStrokesRef.current.length) {
+        pastShapeStrokesRef.current.push({
+          shapeIndex: lastShapeIndexRef.current,
+          strokes: [...completedStrokesRef.current],
+        });
+      }
+      completedStrokesRef.current = [];
+      lastShapeIndexRef.current = currentShapeIndex;
+      shapeCompletedRef.current = false;
+    }
     updateCanvasSize();
     window.addEventListener("resize", updateCanvasSize);
     window.addEventListener("scroll", updateCanvasSize);
