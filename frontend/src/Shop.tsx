@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import NavigationHeader from "./Components/NavigationHeader";
 import Loading from "./Components/Loading";
 import { useDataReady } from "./lib/useDataReady";
@@ -123,22 +123,29 @@ const Shop = () => {
   }, [equippedBrush]);
 
   // Load coins and owned items from backend on mount; use sessionStorage to mitigate flicker on reloads
+  const fetchedBackendRef = useRef<boolean>(false);
   useEffect(() => {
     if (isLoading || !isAuthenticated) return;
-    const cachedCoins = sessionStorage.getItem("shop_coins");
-    const cachedOwned = sessionStorage.getItem("shop_owned");
-    if (cachedCoins) {
-      setCoins(Number(cachedCoins));
-      setCoinsLoaded(true);
-    }
-    if (cachedOwned) {
-      try {
-        setOwned(JSON.parse(cachedOwned));
-        setOwnedLoaded(true);
-      } catch {
-        /* ignore */
+    // Read cache once
+    if (!fetchedBackendRef.current) {
+      const cachedCoins = sessionStorage.getItem("shop_coins");
+      const cachedOwned = sessionStorage.getItem("shop_owned");
+      if (cachedCoins) {
+        setCoins(Number(cachedCoins));
+        setCoinsLoaded(true);
+      }
+      if (cachedOwned) {
+        try {
+          setOwned(JSON.parse(cachedOwned));
+          setOwnedLoaded(true);
+        } catch {
+          /* ignore */
+        }
       }
     }
+    // Avoid refetch loop by guarding with ref
+    if (fetchedBackendRef.current) return;
+    fetchedBackendRef.current = true;
     Promise.all([api.getCoins(), api.getOwnedItems()])
       .then(([coinsData, ownedData]) => {
         setCoins(coinsData.coins);
@@ -150,7 +157,7 @@ const Shop = () => {
         sessionStorage.setItem("shop_owned", JSON.stringify(ownedIds));
       })
       .catch((err) => console.error("Failed to load shop data:", err));
-  }, [isLoading, isAuthenticated, api]);
+  }, [isLoading, isAuthenticated]);
 
   const items = useMemo(() => CATALOG.filter((i) => i.category === activeTab), [activeTab]);
   const isOwned = (id: string) => id === "smooth-brush" || id === "default-theme" || owned.includes(id);
