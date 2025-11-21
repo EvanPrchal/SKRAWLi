@@ -5,15 +5,16 @@ from datetime import datetime
 
 class User(SQLModel, table=True):
     __tablename__ = "users"
-    
+
     id: Optional[int] = Field(default=None, primary_key=True)
     auth0_sub: str = Field(unique=True, index=True)
+    picture_url: Optional[str] = Field(default=None, max_length=512)
     coins: int = Field(default=0)
     bio: Optional[str] = Field(default=None, max_length=500)
     display_name: Optional[str] = Field(default=None, max_length=50)
     profile_background: Optional[str] = Field(default="bg-skrawl-black", max_length=50)
     showcased_badges: Optional[str] = Field(default=None, max_length=200)  # Comma-separated badge codes
-    
+
     badges: list["UserBadge"] = Relationship(back_populates="user")
 
 class OwnedItem(SQLModel, table=True):
@@ -46,3 +47,14 @@ class UserBadge(SQLModel, table=True):
     
     user: "User" = Relationship(back_populates="badges")
     badge: "Badge" = Relationship(back_populates="owners")
+
+
+class FriendRequest(SQLModel, table=True):
+    __tablename__ = "friend_requests"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    requester_id: int = Field(foreign_key="users.id")
+    receiver_id: int = Field(foreign_key="users.id")
+    status: str = Field(default="pending", max_length=20)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    responded_at: Optional[datetime] = Field(default=None)

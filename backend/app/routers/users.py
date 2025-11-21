@@ -48,6 +48,14 @@ class ShowcasedBadgesResponse(BaseModel):
 class UpdateShowcasedBadgesRequest(BaseModel):
     showcased_badges: str
 
+class ProfileResponse(BaseModel):
+    id: int
+    display_name: str | None
+    bio: str | None
+    profile_background: str | None
+    showcased_badges: str | None
+    picture_url: str | None
+
 @router.get("/users/me/coins", response_model=CoinsResponse)
 async def get_coins(
     current_user: User = Depends(get_current_user),
@@ -193,3 +201,18 @@ async def update_showcased_badges(
     db.commit()
     db.refresh(current_user)
     return ShowcasedBadgesResponse(showcased_badges=current_user.showcased_badges)
+
+@router.get("/users/{user_id}/profile", response_model=ProfileResponse)
+async def get_user_profile(user_id: int, db: Session = Depends(get_db)) -> ProfileResponse:
+    """Get public profile information for a user."""
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return ProfileResponse(
+        id=user.id,
+        display_name=user.display_name,
+        bio=user.bio,
+        profile_background=user.profile_background,
+        showcased_badges=user.showcased_badges,
+        picture_url=user.picture_url,
+    )

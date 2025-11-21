@@ -1,10 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import NavigationHeader from "./Components/NavigationHeader";
 import { useApi } from "./lib/api";
 import { useAuth0 } from "@auth0/auth0-react";
 import Loading from "./Components/Loading";
+import { useNavigate } from "react-router-dom";
 
-type UserSummary = { id: number; display_name: string | null; bio: string | null; profile_background: string | null };
+type UserSummary = {
+  id: number;
+  display_name: string | null;
+  bio: string | null;
+  profile_background: string | null;
+  picture_url: string | null;
+};
 type FriendRequest = { id: number; requester_id: number; receiver_id: number; status: string; created_at: string; responded_at: string | null };
 
 const Friends = () => {
@@ -15,7 +22,14 @@ const Friends = () => {
   const [outbound, setOutbound] = useState<FriendRequest[]>([]);
   const [browseQuery, setBrowseQuery] = useState<string>("");
   const [browseResults, setBrowseResults] = useState<UserSummary[]>([]);
+  const [appliedQuery, setAppliedQuery] = useState<string>("");
+  const [offset, setOffset] = useState<number>(0);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+  const [loadingBrowse, setLoadingBrowse] = useState<boolean>(false);
+  const LIMIT = 24;
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [busy, setBusy] = useState<boolean>(false);
+  const navigate = useNavigate();
 
   const refresh = async () => {
     try {
@@ -34,24 +48,63 @@ const Friends = () => {
     }
   }, [isLoading, isAuthenticated]);
 
-  const handleSearch = async () => {
-    if (!browseQuery.trim()) {
-      setBrowseResults([]);
-      return;
-    }
+  const loadPage = async (reset = false) => {
+    if (loadingBrowse) return;
+    setLoadingBrowse(true);
     try {
-      const res = await api.browseUsers(browseQuery.trim());
-      setBrowseResults(res);
+      const pageOffset = reset ? 0 : offset;
+      const res = await api.browseUsers(appliedQuery, pageOffset, LIMIT);
+      setBrowseResults((prev) => (reset ? res : [...prev, ...res]));
+      setOffset(pageOffset + res.length);
+      setHasMore(res.length === LIMIT);
     } catch (e) {
       console.error(e);
+    } finally {
+      setLoadingBrowse(false);
     }
   };
+
+  const handleSearch = async () => {
+    const q = browseQuery.trim();
+    setAppliedQuery(q);
+    setBrowseResults([]);
+    setOffset(0);
+    setHasMore(true);
+    await loadPage(true);
+  };
+
+  // Initial browse load
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      setAppliedQuery("");
+      setBrowseResults([]);
+      setOffset(0);
+      setHasMore(true);
+      loadPage(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, isAuthenticated]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+    const el = sentinelRef.current;
+    const observer = new IntersectionObserver((entries) => {
+      const first = entries[0];
+      if (first.isIntersecting && hasMore && !loadingBrowse) {
+        loadPage();
+      }
+    });
+    observer.observe(el);
+    return () => observer.unobserve(el);
+  }, [hasMore, loadingBrowse, appliedQuery, offset]);
 
   const sendRequest = async (id: number) => {
     setBusy(true);
     try {
       await api.sendFriendRequest(id);
       await refresh();
+      // If viewing profile, refresh it
     } catch (e) {
       console.error(e);
     } finally {
@@ -113,8 +166,10 @@ const Friends = () => {
       <div className="flex-grow mx-auto max-w-6xl w-full p-6 flex flex-col gap-8">
         <h1 className="text-logotype font-logotype">Friends</h1>
         {/* Search / Browse */}
-        <section className="bg-skrawl-white/95 rounded-md p-4 text-skrawl-purple flex flex-col gap-3 border border-skrawl-purple/30">
-          <h2 className="text-header font-header">Find Players</h2>
+        <section className="bg-skrawl-white/95 rounded-md p-4 text-skrawl-purple flex flex-col gap-4 border border-skrawl-purple/30">
+          <div className="flex items-center justify-between">
+            <h2 className="text-header font-header">Players</h2>
+          </div>
           <div className="flex gap-2">
             <input
               type="text"
@@ -130,24 +185,75 @@ const Friends = () => {
             >
               Search
             </button>
+            <button
+              onClick={() => {
+                setBrowseQuery("");
+                setAppliedQuery("");
+                setBrowseResults([]);
+                setOffset(0);
+                setHasMore(true);
+                loadPage(true);
+              }}
+              className="px-4 py-2 rounded-md bg-gray-300 text-skrawl-purple hover:bg-gray-400 disabled:opacity-50"
+              disabled={busy}
+            >
+              Clear
+            </button>
           </div>
-          {browseResults.length > 0 && (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
-              {browseResults.map((u) => (
-                <div key={u.id} className="rounded border border-skrawl-purple/30 bg-white/80 p-3 flex flex-col gap-2">
-                  <div className="text-header font-header">{u.display_name || `User #${u.id}`}</div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {browseResults.map((u) => {
+              const alreadyFriend = friends.some((fr) => fr.id === u.id);
+              return (
+                <div
+                  key={u.id}
+                  className="rounded border border-skrawl-purple/30 bg-white/80 p-3 flex flex-col gap-2 cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={(e) => {
+                    // Prevent card click if clicking the button inside
+                    if ((e.target as HTMLElement).closest("button")) return;
+                    navigate(`/users/${u.id}`);
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    {u.picture_url ? (
+                      <img
+                        src={u.picture_url}
+                        alt={u.display_name || `User ${u.id}`}
+                        className="w-10 h-10 rounded-full border border-skrawl-purple/40 object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-skrawl-purple/20 border border-skrawl-purple/40 flex items-center justify-center text-skrawl-purple font-header">
+                        {(u.display_name || "U").charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="flex flex-col">
+                      <div className="text-header font-header">{u.display_name || `User #${u.id}`}</div>
+                    </div>
+                  </div>
                   <p className="text-sm font-body line-clamp-3">{u.bio || "No bio"}</p>
-                  <button
-                    onClick={() => sendRequest(u.id)}
-                    disabled={busy}
-                    className="px-3 py-1 rounded-md bg-skrawl-purple text-white hover:bg-skrawl-magenta disabled:opacity-50"
-                  >
-                    Add Friend
-                  </button>
+                  {alreadyFriend ? (
+                    <div className="px-3 py-1 rounded-md bg-skrawl-purple/10 text-skrawl-purple text-sm font-header border border-skrawl-purple/30 text-center select-none">
+                      Friends
+                    </div>
+                  ) : (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        sendRequest(u.id);
+                      }}
+                      disabled={busy}
+                      className="px-3 py-1 rounded-md bg-skrawl-purple text-white hover:bg-skrawl-magenta disabled:opacity-50"
+                    >
+                      Add Friend
+                    </button>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
+              );
+            })}
+            <div ref={sentinelRef} className="h-1 col-span-full" />
+          </div>
+          {!loadingBrowse && browseResults.length === 0 && <div className="text-sm text-gray-500">No other players yet.</div>}
+          {loadingBrowse && <div className="text-sm text-gray-500">Loading…</div>}
+          {!hasMore && browseResults.length > 0 && <div className="text-xs text-gray-500">End of results</div>}
         </section>
 
         {/* Pending Requests */}
@@ -195,7 +301,22 @@ const Friends = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {friends.map((f) => (
               <div key={f.id} className="rounded border border-skrawl-purple/30 bg-white/80 p-3 flex flex-col gap-2">
-                <div className="text-header font-header">{f.display_name || `User #${f.id}`}</div>
+                <div className="flex items-center gap-3">
+                  {f.picture_url ? (
+                    <img
+                      src={f.picture_url}
+                      alt={f.display_name || `User ${f.id}`}
+                      className="w-10 h-10 rounded-full border border-skrawl-purple/40 object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-skrawl-purple/20 border border-skrawl-purple/40 flex items-center justify-center text-skrawl-purple font-header">
+                      {(f.display_name || "U").charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="flex flex-col">
+                    <div className="text-header font-header">{f.display_name || `User #${f.id}`}</div>
+                  </div>
+                </div>
                 <p className="text-sm font-body line-clamp-3">{f.bio || "No bio"}</p>
                 <button
                   onClick={() => removeFriend(f.id)}

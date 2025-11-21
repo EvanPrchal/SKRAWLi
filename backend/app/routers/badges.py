@@ -49,6 +49,24 @@ async def list_user_badges(
         for record in records
     ]
 
+@router.get("/users/{user_id}/badges", response_model=list[BadgeResponse])
+async def list_other_user_badges(user_id: int, db: Session = Depends(get_db)) -> list[BadgeResponse]:
+    """Get all badges earned by another user (public)."""
+    user = db.get(User, user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    stmt = (
+        select(UserBadge)
+        .where(UserBadge.user_id == user_id)
+        .options(selectinload(UserBadge.badge))
+        .order_by(UserBadge.earned_at)
+    )
+    records = db.exec(stmt).all()
+    return [
+        BadgeResponse(code=record.badge.code, name=record.badge.name, description=record.badge.description)
+        for record in records
+    ]
+
 
 @router.post("/users/me/badges/{badge_code}", response_model=AwardBadgeResponse, status_code=status.HTTP_200_OK)
 async def award_badge(

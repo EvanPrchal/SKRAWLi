@@ -5,6 +5,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlmodel import Session, select
 from decouple import config
 from app.models import User
+from sqlmodel import select
 from app.database import get_db
 
 # Auth0 configuration from environment
@@ -65,10 +66,20 @@ def get_current_user(
     statement = select(User).where(User.auth0_sub == auth0_sub)
     user = db.exec(statement).first()
     
+    picture = payload.get("picture")
     if not user:
-        user = User(auth0_sub=auth0_sub, coins=0)
+        user = User(auth0_sub=auth0_sub, coins=0, picture_url=picture)
         db.add(user)
         db.commit()
         db.refresh(user)
+    else:
+        updated = False
+        if picture and user.picture_url != picture:
+            user.picture_url = picture
+            updated = True
+        if updated:
+            db.add(user)
+            db.commit()
+            db.refresh(user)
     
     return user

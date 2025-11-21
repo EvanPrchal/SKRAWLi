@@ -20,6 +20,9 @@ const NavigationHeader = () => {
           <Link to="/profile" className="hover:text-skrawl-magenta transition-colors">
             Profile
           </Link>
+          <Link to="/friends" className="hover:text-skrawl-magenta transition-colors">
+            Friends
+          </Link>
           <Link to="/options" className="hover:text-skrawl-magenta transition-colors">
             Options
           </Link>
