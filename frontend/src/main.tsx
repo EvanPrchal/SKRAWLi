@@ -12,7 +12,6 @@ import Profile from "./Profile.tsx";
 import Credits from "./Credits.tsx";
 import Options from "./Options.tsx";
 import Shop from "./Shop.tsx";
-import Friends from "./Friends.tsx";
 import UserProfile from "./UserProfile.tsx";
 createRoot(document.getElementById("root")!).render(
   <Auth0Provider
@@ -36,7 +35,6 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/options" element={<Options />} />
             <Route path="/shop" element={<Shop />} />
             <Route path="/freedraw" element={<FreeDraw />} />
-            <Route path="/friends" element={<Friends />} />
             <Route path="/users/:id" element={<UserProfile />} />
           </Routes>
         </BrowserRouter>

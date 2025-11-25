@@ -5,6 +5,7 @@ import NavigationHeader from "./Components/NavigationHeader";
 import { Tab } from "@headlessui/react";
 import ProfileInfo from "./Components/ProfileInfo";
 import OwnedBadges from "./Components/OwnedBadges";
+import ProfileFriendsTab from "./Components/ProfileFriendsTab";
 import { useApi } from "./lib/api";
 import { useDataReady } from "./lib/useDataReady";
 
@@ -66,7 +67,7 @@ const Profile = () => {
         <div className="w-4/6 h-5/6 flex flex-col bg-skrawl-white overflow-hidden">
           <Tab.Group as="div" className="flex flex-col h-full">
             <Tab.List className="flex w-full justify-around text-header font-header bg-skrawl-black">
-              {["Profile", "Badges"].map((tab) => (
+              {["Profile", "Badges", "Friends"].map((tab) => (
                 <Tab
                   key={tab}
                   className={({ selected }) =>
@@ -85,6 +86,9 @@ const Profile = () => {
               </Tab.Panel>
               <Tab.Panel className="h-full w-full flex items-center justify-center p-4 overflow-y-auto">
                 <OwnedBadges allBadges={allBadges} ownedCodes={ownedCodes} />
+              </Tab.Panel>
+              <Tab.Panel className="h-full w-full flex items-start justify-center p-4 overflow-y-auto">
+                <ProfileFriendsTab />
               </Tab.Panel>
             </Tab.Panels>
           </Tab.Group>

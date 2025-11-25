@@ -6,7 +6,6 @@ import Loading from "./Components/Loading";
 
 interface UserSummary {
   id: number;
-  short_id: string | null;
   display_name: string | null;
   bio: string | null;
   profile_background: string | null;
@@ -125,12 +124,11 @@ const Profiles = () => {
                       />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-skrawl-purple/20 border border-skrawl-purple/40 flex items-center justify-center text-skrawl-purple font-header">
-                        {(u.display_name || u.short_id || "U").charAt(0).toUpperCase()}
+                        {(u.display_name || "U").charAt(0).toUpperCase()}
                       </div>
                     )}
                     <div className="flex flex-col">
-                      <div className="text-header font-header">{u.display_name || (u.short_id ? `Player #${u.short_id}` : `User #${u.id}`)}</div>
-                      {u.short_id && <div className="text-xs font-body text-skrawl-purple">ID: {u.short_id}</div>}
+                      <div className="text-header font-header">{u.display_name || `User #${u.id}`}</div>
                     </div>
                   </div>
                   <p className="text-sm font-body line-clamp-3">{u.bio || "No bio"}</p>
