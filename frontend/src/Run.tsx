@@ -19,6 +19,18 @@ const timeForDifficulty = (level: string): number => {
   }
 };
 
+const multiplierForDifficulty = (level: string): number => {
+  switch (level) {
+    case "easy":
+      return 0.75;
+    case "hard":
+      return 1.25;
+    case "normal":
+    default:
+      return 1;
+  }
+};
+
 const readDifficultyLevel = (): string => {
   if (typeof window === "undefined") {
     return "normal";
@@ -43,6 +55,7 @@ const Run = () => {
   const [badgesLoaded, setBadgesLoaded] = useState<boolean>(false);
   const [minigamesCompleted, setMinigamesCompleted] = useState<number>(0);
   const [speedUpNotification, setSpeedUpNotification] = useState<string>("");
+  const [difficultyLevel, setDifficultyLevel] = useState<string>(() => readDifficultyLevel());
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -59,6 +72,7 @@ const Run = () => {
       const nextTime = timeForDifficulty(level);
       setConfiguredMinigameTime(nextTime);
       setTimeRemaining(nextTime);
+      setDifficultyLevel(level);
     };
 
     window.addEventListener("settingsUpdated", onSettings as EventListener);
@@ -109,8 +123,12 @@ const Run = () => {
 
   const handleComplete = (success: boolean, reward: number) => {
     if (success) {
+      // Apply difficulty multiplier to reward
+      const multiplier = multiplierForDifficulty(difficultyLevel);
+      const adjustedReward = Math.round(reward * multiplier);
+
       setCoins((c) => {
-        const next = c + reward;
+        const next = c + adjustedReward;
         if (next >= 50) {
           maybeAward("COIN_COLLECTOR");
         }
@@ -128,7 +146,7 @@ const Run = () => {
       }
       // Save coins to backend when signed in
       if (!isGuest) {
-        api.incrementCoins(reward).catch((err) => console.error("Failed to save coins:", err));
+        api.incrementCoins(adjustedReward).catch((err) => console.error("Failed to save coins:", err));
       }
 
       // Speed up mechanic: every 5 minigames, reduce time by 1 second
@@ -155,7 +173,9 @@ const Run = () => {
   };
 
   const handleStart = () => {
-    const latestTime = timeForDifficulty(readDifficultyLevel());
+    const currentDifficulty = readDifficultyLevel();
+    const latestTime = timeForDifficulty(currentDifficulty);
+    setDifficultyLevel(currentDifficulty);
     setConfiguredMinigameTime(latestTime);
     setTimeRemaining(latestTime);
     setStarted(true);
@@ -212,6 +232,9 @@ const Run = () => {
         <div className="game-over h-full flex flex-col items-center justify-center text-body font-body text-skrawl-purple gap-2">
           <h2 className="text-logotype font-logotype">Game Over!</h2>
           <p>Coins earned: {coins}</p>
+          <p className="text-sm opacity-75">
+            Difficulty: {difficultyLevel.charAt(0).toUpperCase() + difficultyLevel.slice(1)} ({multiplierForDifficulty(difficultyLevel)}x multiplier)
+          </p>
           <button onClick={handleStartOver} className="text-skrawl-purple hover:text-skrawl-magenta transition-colors">
             Play Again
           </button>
