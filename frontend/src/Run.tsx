@@ -12,10 +12,10 @@ const timeForDifficulty = (level: string): number => {
     case "easy":
       return 20;
     case "hard":
-      return 10;
+      return 12;
     case "normal":
     default:
-      return 15;
+      return 16;
   }
 };
 
@@ -41,6 +41,8 @@ const Run = () => {
   const streakRef = useRef<number>(0);
   const [ownedBadges, setOwnedBadges] = useState<Set<string>>(new Set());
   const [badgesLoaded, setBadgesLoaded] = useState<boolean>(false);
+  const [minigamesCompleted, setMinigamesCompleted] = useState<number>(0);
+  const [speedUpNotification, setSpeedUpNotification] = useState<string>("");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -128,6 +130,17 @@ const Run = () => {
       if (!isGuest) {
         api.incrementCoins(reward).catch((err) => console.error("Failed to save coins:", err));
       }
+
+      // Speed up mechanic: every 5 minigames, reduce time by 1 second
+      const newCount = minigamesCompleted + 1;
+      setMinigamesCompleted(newCount);
+      if (newCount % 5 === 0 && configuredMinigameTime > 5) {
+        const newTime = configuredMinigameTime - 2;
+        setConfiguredMinigameTime(newTime);
+        setTimeRemaining(newTime);
+        setSpeedUpNotification(`Time Reduced!`);
+        setTimeout(() => setSpeedUpNotification(""), 3000);
+      }
     } else {
       streakRef.current = 0;
       setLives((l) => {
@@ -151,6 +164,8 @@ const Run = () => {
     setLives(3);
     completedCountRef.current = 0;
     streakRef.current = 0;
+    setMinigamesCompleted(0);
+    setSpeedUpNotification("");
   };
 
   const handleStartOver = () => {
@@ -161,7 +176,13 @@ const Run = () => {
   if (!ready) return <Loading />;
 
   return (
-    <GameplayLayout lives={lives} timeRemaining={timeRemaining} userImage={user?.picture} userName={user?.name ?? (isGuest ? "Guest" : undefined)}>
+    <GameplayLayout
+      lives={lives}
+      timeRemaining={timeRemaining}
+      userImage={user?.picture}
+      userName={user?.name ?? (isGuest ? "Guest" : undefined)}
+      notification={speedUpNotification}
+    >
       {!started ? (
         <div className="flex flex-col h-full justify-center items-center gap-4">
           {isGuest && <p className="text-body font-body text-skrawl-purple">Playing as Guest (progress won&apos;t save)</p>}
@@ -184,6 +205,7 @@ const Run = () => {
             }}
             onTimeUpdate={setTimeRemaining}
             initialTime={configuredMinigameTime}
+            skipCountdown={minigamesCompleted > 0}
           />
         </div>
       ) : (

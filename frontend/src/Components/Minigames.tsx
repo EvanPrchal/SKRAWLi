@@ -9,11 +9,12 @@ interface MinigamesProps {
   onTimeUpdate: (time: number) => void;
   initialTime?: number;
   specificMinigame?: Minigame; // Optional: start with a specific minigame
+  skipCountdown?: boolean; // Skip the initial countdown if true
 }
 
 const MINIGAME_TIME = 10; // default seconds per minigame
 
-const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpdate, initialTime, specificMinigame }) => {
+const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpdate, initialTime, specificMinigame, skipCountdown = false }) => {
   // Function to get a random minigame
   const getRandomMinigame = useCallback(() => {
     const randomMinigames = getRandomMinigames();
@@ -24,9 +25,10 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
   const [currentMinigame, setCurrentMinigame] = useState<Minigame>(specificMinigame ?? getRandomMinigame());
   const [showTransition, setShowTransition] = useState(false);
   const [timeLeft, setTimeLeft] = useState(initialTime ?? MINIGAME_TIME);
-  const [timerActive, setTimerActive] = useState(false);
-  const [countdownValue, setCountdownValue] = useState<string>("3");
+  const [timerActive, setTimerActive] = useState(skipCountdown);
+  const [countdownValue, setCountdownValue] = useState<string>(skipCountdown ? "" : "3");
   const [pendingMinigame, setPendingMinigame] = useState<Minigame | null>(null);
+  const [hasShownCountdown, setHasShownCountdown] = useState(skipCountdown);
 
   // Timer effect
   useEffect(() => {
@@ -78,17 +80,18 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
             setTimeout(() => {
               setCountdownValue("");
               setTimerActive(true);
+              setHasShownCountdown(true);
             }, 500);
           }, 1000);
         }, 1000);
       }, 1000);
     };
 
-    // Start countdown on mount
-    if (!timerActive && !showTransition) {
+    // Start countdown on mount only if not already shown and not skipped
+    if (!hasShownCountdown && !timerActive && !showTransition) {
       startCountdown();
     }
-  }, []);
+  }, [hasShownCountdown, timerActive, showTransition]);
 
   // Transition effect
   useEffect(() => {
