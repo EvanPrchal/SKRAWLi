@@ -109,6 +109,91 @@ const BRUSH_STYLE_MAP: Record<string, string> = {
   "rainbow-brush": "rainbow",
 };
 
+const BrushPreview: React.FC<{ variant: "pixel" | "rainbow" }> = ({ variant }) => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const width = 84;
+    const height = 34;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, width, height);
+
+    if (variant === "pixel") {
+      ctx.fillStyle = "#241f21";
+      const size = 8;
+      const points = [
+        { x: 14, y: 22 },
+        { x: 26, y: 16 },
+        { x: 38, y: 14 },
+        { x: 50, y: 16 },
+        { x: 62, y: 22 },
+      ];
+
+      const drawBlock = (x: number, y: number) => {
+        ctx.fillRect(x - size / 2, y - size / 2, size, size);
+      };
+
+      for (let i = 0; i < points.length; i++) {
+        const current = points[i];
+        drawBlock(current.x, current.y);
+        if (i === 0) continue;
+        const prev = points[i - 1];
+        const dx = current.x - prev.x;
+        const dy = current.y - prev.y;
+        const dist = Math.hypot(dx, dy);
+        const steps = Math.max(1, Math.floor(dist / (size * 0.6)));
+        for (let step = 1; step < steps; step++) {
+          const t = step / steps;
+          const ix = prev.x + dx * t;
+          const iy = prev.y + dy * t;
+          drawBlock(ix, iy);
+        }
+      }
+    } else {
+      const points = [
+        { x: 12, y: 22 },
+        { x: 24, y: 16 },
+        { x: 36, y: 14 },
+        { x: 48, y: 16 },
+        { x: 60, y: 22 },
+        { x: 72, y: 18 },
+      ];
+
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.lineWidth = 8;
+
+      const baseHue = 0; // start at red
+      for (let i = 1; i < points.length; i++) {
+        const prev = points[i - 1];
+        const current = points[i];
+        const hue = (baseHue + (i - 1) * 42) % 360;
+        ctx.strokeStyle = `hsl(${hue}, 100%, 50%)`;
+        ctx.beginPath();
+        ctx.moveTo(prev.x, prev.y);
+        ctx.lineTo(current.x, current.y);
+        ctx.stroke();
+      }
+    }
+  }, [variant]);
+
+  return <canvas ref={canvasRef} className="block rounded-md border border-gray-300 bg-white" />;
+};
+
 const Shop = () => {
   const { isLoading, isAuthenticated } = useAuth0();
   const api = useApi();
@@ -309,18 +394,9 @@ const Shop = () => {
                             ))}
                           </div>
                         ) : item.preview === "pixel" ? (
-                          <div className="flex gap-1">
-                            {[0, 1, 2, 3, 4].map((i) => (
-                              <div key={i} className="w-2 h-2 bg-skrawl-black border border-gray-300" />
-                            ))}
-                          </div>
+                          <BrushPreview variant="pixel" />
                         ) : item.preview === "rainbow" ? (
-                          <div className="w-16 h-8 rounded-full border border-gray-300 overflow-hidden bg-white">
-                            <div
-                              className="h-full w-full"
-                              style={{ background: "linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet)" }}
-                            />
-                          </div>
+                          <BrushPreview variant="rainbow" />
                         ) : item.previewImage ? (
                           <div className="w-16 h-16 rounded-md overflow-hidden border border-gray-300 bg-white flex items-center justify-center">
                             <img src={item.previewImage} alt={`${item.name} preview`} className="w-full h-full object-contain" />
