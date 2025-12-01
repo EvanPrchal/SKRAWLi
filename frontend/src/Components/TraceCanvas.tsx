@@ -11,9 +11,10 @@ interface TraceCanvasProps {
   currentTime: number;
   onComplete: (success: boolean, reward: number) => void;
   guides?: Shape[];
+  resetToken?: number;
 }
 
-const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, threshold = 20, currentTime, onComplete, guides }) => {
+const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, threshold = 20, currentTime, onComplete, guides, resetToken }) => {
   const currentShape = shapes[currentShapeIndex];
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -260,6 +261,17 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
     renderStroke(userPointsRef.current, brushType);
   };
 
+  // Clear all drawn data when a reset token is provided (e.g. on life loss)
+  useEffect(() => {
+    if (resetToken === undefined) return;
+    userPointsRef.current = [];
+    completedStrokesRef.current = [];
+    pastShapeStrokesRef.current = [];
+    shapeCompletedRef.current = false;
+    drawCanvas();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetToken]);
+
   useEffect(() => {
     // Archive strokes from previous shape so they remain visible.
     if (currentShapeIndex !== lastShapeIndexRef.current) {
@@ -305,7 +317,11 @@ function evaluateTrace(userPts: Point[], shape: Shape, threshold: number): boole
   if (userPts.length < 10) return false;
 
   if (shape.type === "polygon") {
-    const pts = (shape as any).points as Point[];
+    const polygonShape = shape as PolygonShape;
+    const pts = polygonShape.points;
+    const isSquare = polygonShape.id.toLowerCase().includes("square");
+    const distanceThreshold = isSquare ? Math.max(threshold * 0.5, 10) : threshold;
+    const requiredCoverage = isSquare ? 0.9 : 0.7;
 
     // Calculate total shape length for coverage check
     let totalShapeLength = 0;
@@ -367,7 +383,7 @@ function evaluateTrace(userPts: Point[], shape: Shape, threshold: number): boole
       }
 
       // If this point is close enough to the shape
-      if (minDist <= threshold) {
+      if (minDist <= distanceThreshold) {
         if (!segmentsCovered.has(closestSegment)) {
           segmentsCovered.add(closestSegment);
           // Add approximate segment length to covered length
@@ -380,8 +396,19 @@ function evaluateTrace(userPts: Point[], shape: Shape, threshold: number): boole
       }
     }
 
-    // Check if enough of the shape has been covered (70%)
-    return coveredLength / totalShapeLength >= 0.7;
+    if (totalShapeLength === 0) {
+      return false;
+    }
+
+    const coverageRatio = coveredLength / totalShapeLength;
+
+    if (isSquare) {
+      const expectedSegments = pts.length > 1 ? pts.length - 1 : 0;
+      return coverageRatio >= requiredCoverage && segmentsCovered.size >= Math.max(3, expectedSegments);
+    }
+
+    // Check if enough of the shape has been covered
+    return coverageRatio >= requiredCoverage;
   } else if (shape.type === "circle") {
     const circle = shape as CircleShape;
     const { center, radius } = circle;

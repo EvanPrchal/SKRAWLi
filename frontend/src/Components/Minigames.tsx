@@ -29,6 +29,7 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
   const [countdownValue, setCountdownValue] = useState<string>(skipCountdown ? "" : "3");
   const [pendingMinigame, setPendingMinigame] = useState<Minigame | null>(null);
   const [hasShownCountdown, setHasShownCountdown] = useState(skipCountdown);
+  const [resetToken, setResetToken] = useState<number>(0);
 
   // Ensure external skip flag permanently suppresses the countdown (e.g. after notifications)
   useEffect(() => {
@@ -155,6 +156,7 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
       const currentType = currentMinigame.id;
       const randomMinigames = getRandomMinigames();
       const nextGame = randomMinigames.find((m) => m.id === currentType) || getRandomMinigame();
+      setResetToken((token) => token + 1);
       setCurrentMinigame(nextGame);
       setPendingMinigame(null);
       const nextTime = initialTime ?? MINIGAME_TIME;
@@ -193,6 +195,7 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
         currentTime={timeLeft}
         onComplete={handleComplete}
         guides={currentMinigame.guides}
+        resetToken={resetToken}
       />
     </div>
   );
