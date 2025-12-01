@@ -388,6 +388,10 @@ function evaluateTrace(userPts: Point[], shape: Shape, threshold: number): boole
 
     // Track angular coverage
     const anglesCovered = new Set<number>();
+    // Make circle matching a bit more forgiving
+    const angleStep = 10; // degrees per bucket (was 5)
+    const requiredDegrees = 216; // 60% of 360 (was 70%)
+    const effectiveThreshold = Math.max(threshold * 1.5, Math.min(18, radius * 0.12));
 
     for (const up of userPts) {
       const dx = up.x - center.x;
@@ -395,15 +399,15 @@ function evaluateTrace(userPts: Point[], shape: Shape, threshold: number): boole
       const dist = Math.sqrt(dx * dx + dy * dy);
 
       // If point is close enough to the circle's path
-      if (Math.abs(dist - radius) <= threshold) {
-        // Calculate angle and add to coverage (rounded to nearest 5 degrees)
-        const angle = Math.round((((Math.atan2(dy, dx) * 180) / Math.PI + 360) % 360) / 5) * 5;
+      if (Math.abs(dist - radius) <= effectiveThreshold) {
+        // Calculate angle and add to coverage (rounded to nearest angleStep degrees)
+        const angle = Math.round((((Math.atan2(dy, dx) * 180) / Math.PI + 360) % 360) / angleStep) * angleStep;
         anglesCovered.add(angle);
       }
     }
 
-    // Check if enough of the circle has been traced (70% of 360 degrees = 252 degrees)
-    return anglesCovered.size * 5 >= 252;
+    // Check if enough of the circle has been traced (reduced coverage threshold)
+    return anglesCovered.size * angleStep >= requiredDegrees;
   } else if (shape.type === "ellipse") {
     const ellipse = shape as EllipseShape;
     const { center, radiusX, radiusY } = ellipse;
