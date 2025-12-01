@@ -29,6 +29,7 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
   const shapeCompletedRef = useRef<boolean>(false);
   const offsetRef = useRef<{ left: number; top: number }>({ left: 0, top: 0 });
   const [brushType, setBrushType] = useState<string>("smooth");
+  const [pointerPos, setPointerPos] = useState<{ x: number; y: number } | null>(null);
 
   // Listen for brush changes from shop
   useEffect(() => {
@@ -87,8 +88,16 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
     };
   };
 
+  const updatePointerIndicator = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    setPointerPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  };
+
   const startDraw = (e: React.PointerEvent<HTMLCanvasElement>) => {
     updateCanvasSize();
+    updatePointerIndicator(e);
     const pt = getRelativePoint(e);
     userPointsRef.current = [pt];
     currentStrokeBrushRef.current = brushType; // capture brush at stroke start
@@ -96,6 +105,7 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
   };
 
   const draw = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    updatePointerIndicator(e);
     if (!isDrawing) return;
     const pt = getRelativePoint(e);
     userPointsRef.current.push(pt);
@@ -295,17 +305,51 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
     };
   }, [shapes, currentShapeIndex, guides]);
 
+  const pointerDisplaySize = (() => {
+    switch (brushType) {
+      case "pixel":
+        return 8;
+      case "rainbow":
+        return 6;
+      default:
+        return 5;
+    }
+  })();
+  const pointerIsSquare = brushType === "pixel";
+  const pointerBorderColor = pointerIsSquare ? "#241f21" : "rgba(36,31,33,0.85)";
+  const pointerFillColor = pointerIsSquare ? "rgba(36,31,33,0.25)" : "rgba(255,255,255,0.12)";
+
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full cursor-none">
       <MiniTimer time={currentTime} show={showTimer} />
       <canvas
         ref={canvasRef}
-        style={{ width: "100%", height: "100%", touchAction: "none", display: "block" }}
+        style={{ width: "100%", height: "100%", touchAction: "none", display: "block", cursor: "none" }}
         onPointerDown={startDraw}
         onPointerMove={draw}
         onPointerUp={endDraw}
-        onPointerLeave={endDraw}
+        onPointerLeave={() => {
+          setPointerPos(null);
+          endDraw();
+        }}
       />
+      {pointerPos && (
+        <div
+          className="pointer-events-none absolute"
+          style={{
+            left: pointerPos.x,
+            top: pointerPos.y,
+            width: `${pointerDisplaySize}px`,
+            height: `${pointerDisplaySize}px`,
+            transform: "translate(-50%, -50%)",
+            borderRadius: pointerIsSquare ? "15%" : "9999px",
+            border: "none",
+            outline: `1px solid ${pointerBorderColor}`,
+            backgroundColor: pointerFillColor,
+            boxShadow: "0 0 2px rgba(36,31,33,0.28)",
+          }}
+        />
+      )}
     </div>
   );
 };
