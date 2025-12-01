@@ -16,6 +16,7 @@ type CatalogItem = {
   category: Category;
   colors?: string[]; // Optional color palette preview for themes
   preview?: string; // Optional preview type (e.g., "pixel")
+  previewImage?: string; // Optional image preview
 };
 
 const CATALOG: CatalogItem[] = [
@@ -41,6 +42,17 @@ const CATALOG: CatalogItem[] = [
     description: "Paint with all the colors of the rainbow in a single stroke.",
     price: 200,
     category: "Brushes",
+    preview: "rainbow",
+  },
+
+  // Characters
+  {
+    id: "classic-pint",
+    name: "Classic Pint",
+    description: "The default SKRAWLi companion, ready to skrawl!",
+    price: 0,
+    category: "Characters",
+    previewImage: "/src/assets/images/pint2.png",
   },
 
   // Themes
@@ -77,10 +89,6 @@ const CATALOG: CatalogItem[] = [
     colors: ["#880d1e", "#dd2d4a", "#f26a8d", "#f49cbb", "#cbeef3"],
   },
 
-  // Characters
-  // { id: "ninja", name: "Ninja", description: "A stealthy ninja character.", price: 200, category: "Characters" },
-  // { id: "robot", name: "Robot", description: "A futuristic robot character.", price: 300, category: "Characters" },
-
   // Misc
   {
     id: "color-picker",
@@ -115,12 +123,20 @@ const Shop = () => {
     if (typeof window === "undefined") return "smooth";
     return localStorage.getItem("equippedBrush") || "smooth";
   });
+  const [equippedCharacter, setEquippedCharacter] = useState<string>(() => {
+    if (typeof window === "undefined") return "/src/assets/images/pint2.png";
+    return localStorage.getItem("equippedCharacter") || "/src/assets/images/pint2.png";
+  });
 
   // Save equipped brush to localStorage and dispatch event
   useEffect(() => {
     localStorage.setItem("equippedBrush", equippedBrush);
     window.dispatchEvent(new Event("brushUpdate"));
   }, [equippedBrush]);
+
+  useEffect(() => {
+    localStorage.setItem("equippedCharacter", equippedCharacter);
+  }, [equippedCharacter]);
 
   // Load coins and owned items from backend on mount; use sessionStorage to mitigate flicker on reloads
   const fetchedBackendRef = useRef<boolean>(false);
@@ -160,7 +176,7 @@ const Shop = () => {
   }, [isLoading, isAuthenticated]);
 
   const items = useMemo(() => CATALOG.filter((i) => i.category === activeTab), [activeTab]);
-  const isOwned = (id: string) => id === "smooth-brush" || id === "default-theme" || owned.includes(id);
+  const isOwned = (id: string) => id === "smooth-brush" || id === "default-theme" || id === "classic-pint" || owned.includes(id);
   const canAfford = (price: number) => (coins ?? 0) >= price;
 
   const ready = useDataReady([
@@ -169,9 +185,13 @@ const Shop = () => {
   ]);
   if (!ready) return <Loading />;
 
-  const handleEquip = (itemId: string) => {
+  const handleEquipBrush = (itemId: string) => {
     const styleId = BRUSH_STYLE_MAP[itemId] || itemId; // fallback to itemId for future styles
     setEquippedBrush(styleId);
+  };
+  const handleEquipCharacter = (item: CatalogItem) => {
+    if (!item.previewImage) return;
+    setEquippedCharacter(item.previewImage);
   };
 
   const handleBuy = async (item: CatalogItem) => {
@@ -294,6 +314,17 @@ const Shop = () => {
                               <div key={i} className="w-2 h-2 bg-skrawl-black border border-gray-300" />
                             ))}
                           </div>
+                        ) : item.preview === "rainbow" ? (
+                          <div className="w-16 h-8 rounded-full border border-gray-300 overflow-hidden bg-white">
+                            <div
+                              className="h-full w-full"
+                              style={{ background: "linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet)" }}
+                            />
+                          </div>
+                        ) : item.previewImage ? (
+                          <div className="w-16 h-16 rounded-md overflow-hidden border border-gray-300 bg-white flex items-center justify-center">
+                            <img src={item.previewImage} alt={`${item.name} preview`} className="w-full h-full object-contain" />
+                          </div>
                         ) : item.id === "color-picker" ? (
                           <div
                             className="w-7 h-7 rounded-full border border-gray-300 shadow-sm"
@@ -307,7 +338,9 @@ const Shop = () => {
                         )}
                       </td>
                       <td className="px-4 py-3 font-body">
-                        {item.price === 0 && (item.id === "smooth-brush" || item.id === "default-theme") ? "-" : `${item.price} coins`}
+                        {item.price === 0 && (item.id === "smooth-brush" || item.id === "default-theme" || item.id === "classic-pint")
+                          ? "-"
+                          : `${item.price} coins`}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-2">
@@ -317,7 +350,7 @@ const Shop = () => {
                               const isEquipped = equippedBrush === brushStyle;
                               return (
                                 <button
-                                  onClick={() => handleEquip(item.id)}
+                                  onClick={() => handleEquipBrush(item.id)}
                                   className={`py-2 px-4 rounded-md font-body transition-colors ${
                                     isEquipped ? "bg-skrawl-magenta text-white" : "bg-skrawl-purple text-white hover:bg-skrawl-magenta"
                                   }`}
@@ -333,6 +366,20 @@ const Shop = () => {
                               return (
                                 <button
                                   onClick={() => handleEquipTheme(item.id)}
+                                  className={`py-2 px-4 rounded-md font-body transition-colors ${
+                                    isEquipped ? "bg-skrawl-magenta text-white" : "bg-skrawl-purple text-white hover:bg-skrawl-magenta"
+                                  }`}
+                                >
+                                  {isEquipped ? "✓ Equipped" : "Equip"}
+                                </button>
+                              );
+                            })()
+                          ) : isOwned(item.id) && item.category === "Characters" ? (
+                            (() => {
+                              const isEquipped = equippedCharacter === item.previewImage;
+                              return (
+                                <button
+                                  onClick={() => handleEquipCharacter(item)}
                                   className={`py-2 px-4 rounded-md font-body transition-colors ${
                                     isEquipped ? "bg-skrawl-magenta text-white" : "bg-skrawl-purple text-white hover:bg-skrawl-magenta"
                                   }`}
