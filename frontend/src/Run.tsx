@@ -57,6 +57,7 @@ const Run = () => {
   const [notification, setNotification] = useState<string>("");
   const notificationTimeoutRef = useRef<number | null>(null);
   const [difficultyLevel, setDifficultyLevel] = useState<string>(() => readDifficultyLevel());
+  const [freezeTimer, setFreezeTimer] = useState<boolean>(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -160,10 +161,12 @@ const Run = () => {
         if (notificationTimeoutRef.current !== null) {
           window.clearTimeout(notificationTimeoutRef.current);
         }
+        setFreezeTimer(true);
         setNotification("Time Reduced!");
         notificationTimeoutRef.current = window.setTimeout(() => {
           setNotification("");
           notificationTimeoutRef.current = null;
+          setFreezeTimer(false);
         }, 1000);
       }
     } else {
@@ -177,10 +180,12 @@ const Run = () => {
         if (notificationTimeoutRef.current !== null) {
           window.clearTimeout(notificationTimeoutRef.current);
         }
+        setFreezeTimer(true);
         setNotification("-1 Life");
         notificationTimeoutRef.current = window.setTimeout(() => {
           setNotification("");
           notificationTimeoutRef.current = null;
+          setFreezeTimer(false);
         }, 1000);
         return nextLives;
       });
@@ -205,6 +210,7 @@ const Run = () => {
       notificationTimeoutRef.current = null;
     }
     setNotification("");
+    setFreezeTimer(false);
   };
 
   const handleStartOver = () => {
@@ -253,6 +259,7 @@ const Run = () => {
             onTimeUpdate={setTimeRemaining}
             initialTime={configuredMinigameTime}
             skipCountdown={minigamesCompleted > 0 || notification !== ""}
+            freezeTimer={freezeTimer}
           />
         </div>
       ) : (

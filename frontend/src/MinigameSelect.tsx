@@ -66,6 +66,7 @@ const MinigameSelect = () => {
   const [notification, setNotification] = useState<string>("");
   const notificationTimeoutRef = useRef<number | null>(null);
   const [minigamesCompleted, setMinigamesCompleted] = useState<number>(0);
+  const [freezeTimer, setFreezeTimer] = useState<boolean>(false);
 
   const minigameOptions = getMinigameOptions();
 
@@ -86,10 +87,12 @@ const MinigameSelect = () => {
         if (notificationTimeoutRef.current !== null) {
           window.clearTimeout(notificationTimeoutRef.current);
         }
+        setFreezeTimer(true);
         setNotification("Time Reduced!");
         notificationTimeoutRef.current = window.setTimeout(() => {
           setNotification("");
           notificationTimeoutRef.current = null;
+          setFreezeTimer(false);
         }, 1000);
       }
     } else {
@@ -102,10 +105,12 @@ const MinigameSelect = () => {
         if (notificationTimeoutRef.current !== null) {
           window.clearTimeout(notificationTimeoutRef.current);
         }
+        setFreezeTimer(true);
         setNotification("-1 Life");
         notificationTimeoutRef.current = window.setTimeout(() => {
           setNotification("");
           notificationTimeoutRef.current = null;
+          setFreezeTimer(false);
         }, 1000);
         return nextLives;
       });
@@ -128,6 +133,7 @@ const MinigameSelect = () => {
     setCoins(0);
     setLives(3);
     setMinigamesCompleted(0);
+    setFreezeTimer(false);
     if (notificationTimeoutRef.current !== null) {
       window.clearTimeout(notificationTimeoutRef.current);
       notificationTimeoutRef.current = null;
@@ -141,6 +147,7 @@ const MinigameSelect = () => {
     setCoins(0);
     setLives(3);
     setMinigamesCompleted(0);
+    setFreezeTimer(false);
     if (notificationTimeoutRef.current !== null) {
       window.clearTimeout(notificationTimeoutRef.current);
       notificationTimeoutRef.current = null;
@@ -204,6 +211,7 @@ const MinigameSelect = () => {
             initialTime={configuredMinigameTime}
             specificMinigame={selectedMinigame}
             skipCountdown={minigamesCompleted > 0 || notification !== ""}
+            freezeTimer={freezeTimer}
           />
         </div>
       ) : (

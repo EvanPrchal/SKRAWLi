@@ -10,11 +10,20 @@ interface MinigamesProps {
   initialTime?: number;
   specificMinigame?: Minigame; // Optional: start with a specific minigame
   skipCountdown?: boolean; // Skip the initial countdown if true
+  freezeTimer?: boolean; // Pause active timer while true
 }
 
 const MINIGAME_TIME = 10; // default seconds per minigame
 
-const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpdate, initialTime, specificMinigame, skipCountdown = false }) => {
+const Minigames: React.FC<MinigamesProps> = ({
+  onComplete,
+  onGameOver,
+  onTimeUpdate,
+  initialTime,
+  specificMinigame,
+  skipCountdown = false,
+  freezeTimer = false,
+}) => {
   // Function to get a random minigame
   const getRandomMinigame = useCallback(() => {
     const randomMinigames = getRandomMinigames();
@@ -41,6 +50,17 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
       }
     }
   }, [skipCountdown, hasShownCountdown, timerActive]);
+
+  // Pause/resume timer based on freeze flag from parent
+  useEffect(() => {
+    if (freezeTimer) {
+      if (timerActive) {
+        setTimerActive(false);
+      }
+    } else if (!showTransition && !countdownValue && !timerActive) {
+      setTimerActive(true);
+    }
+  }, [freezeTimer, showTransition, countdownValue, timerActive]);
 
   // Timer effect
   useEffect(() => {
