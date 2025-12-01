@@ -109,7 +109,7 @@ const BRUSH_STYLE_MAP: Record<string, string> = {
   "rainbow-brush": "rainbow",
 };
 
-const BrushPreview: React.FC<{ variant: "pixel" | "rainbow" }> = ({ variant }) => {
+const BrushPreview = ({ variant }: { variant: "pixel" | "rainbow" }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -132,61 +132,76 @@ const BrushPreview: React.FC<{ variant: "pixel" | "rainbow" }> = ({ variant }) =
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, width, height);
 
+    const pathPoints = [
+      { x: 12, y: 22 },
+      { x: 24, y: 16 },
+      { x: 36, y: 12 },
+      { x: 48, y: 16 },
+      { x: 60, y: 24 },
+      { x: 72, y: 20 },
+    ];
+
     if (variant === "pixel") {
       ctx.fillStyle = "#241f21";
-      const size = 8;
-      const points = [
-        { x: 14, y: 22 },
-        { x: 26, y: 16 },
-        { x: 38, y: 14 },
-        { x: 50, y: 16 },
-        { x: 62, y: 22 },
-      ];
+      const size = 10;
+      const stepDist = size * 0.6;
 
       const drawBlock = (x: number, y: number) => {
-        ctx.fillRect(x - size / 2, y - size / 2, size, size);
+        ctx.fillRect(Math.round(x - size / 2), Math.round(y - size / 2), size, size);
       };
 
-      for (let i = 0; i < points.length; i++) {
-        const current = points[i];
-        drawBlock(current.x, current.y);
-        if (i === 0) continue;
-        const prev = points[i - 1];
-        const dx = current.x - prev.x;
-        const dy = current.y - prev.y;
-        const dist = Math.hypot(dx, dy);
-        const steps = Math.max(1, Math.floor(dist / (size * 0.6)));
-        for (let step = 1; step < steps; step++) {
-          const t = step / steps;
-          const ix = prev.x + dx * t;
-          const iy = prev.y + dy * t;
+      let prevPoint = pathPoints[0];
+      drawBlock(prevPoint.x, prevPoint.y);
+
+      for (let i = 1; i < pathPoints.length; i++) {
+        const current = pathPoints[i];
+        const dx = current.x - prevPoint.x;
+        const dy = current.y - prevPoint.y;
+        const distance = Math.hypot(dx, dy);
+        const segments = Math.max(1, Math.floor(distance / stepDist));
+        for (let seg = 1; seg <= segments; seg++) {
+          const t = seg / segments;
+          const ix = prevPoint.x + dx * t;
+          const iy = prevPoint.y + dy * t;
           drawBlock(ix, iy);
         }
+        prevPoint = current;
       }
     } else {
-      const points = [
-        { x: 12, y: 22 },
-        { x: 24, y: 16 },
-        { x: 36, y: 14 },
-        { x: 48, y: 16 },
-        { x: 60, y: 22 },
-        { x: 72, y: 18 },
-      ];
-
+      const size = 8;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-      ctx.lineWidth = 8;
+      ctx.lineWidth = size;
 
-      const baseHue = 0; // start at red
-      for (let i = 1; i < points.length; i++) {
-        const prev = points[i - 1];
-        const current = points[i];
-        const hue = (baseHue + (i - 1) * 42) % 360;
-        ctx.strokeStyle = `hsl(${hue}, 100%, 50%)`;
-        ctx.beginPath();
-        ctx.moveTo(prev.x, prev.y);
-        ctx.lineTo(current.x, current.y);
-        ctx.stroke();
+      let prevPoint = pathPoints[0];
+      let hue = 0; // start at red to mirror in-app brush
+
+      for (let i = 1; i < pathPoints.length; i++) {
+        const current = pathPoints[i];
+        const dx = current.x - prevPoint.x;
+        const dy = current.y - prevPoint.y;
+        const distance = Math.hypot(dx, dy);
+        const step = 6;
+        const segments = Math.max(1, Math.floor(distance / step));
+
+        for (let seg = 0; seg < segments; seg++) {
+          const startT = seg / segments;
+          const endT = (seg + 1) / segments;
+          const startX = prevPoint.x + dx * startT;
+          const startY = prevPoint.y + dy * startT;
+          const endX = prevPoint.x + dx * endT;
+          const endY = prevPoint.y + dy * endT;
+
+          ctx.strokeStyle = `hsl(${hue % 360}, 100%, 50%)`;
+          ctx.beginPath();
+          ctx.moveTo(startX, startY);
+          ctx.lineTo(endX, endY);
+          ctx.stroke();
+
+          hue += 12;
+        }
+
+        prevPoint = current;
       }
     }
   }, [variant]);
