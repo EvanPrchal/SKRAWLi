@@ -320,8 +320,8 @@ function evaluateTrace(userPts: Point[], shape: Shape, threshold: number): boole
     const polygonShape = shape as PolygonShape;
     const pts = polygonShape.points;
     const isSquare = polygonShape.id.toLowerCase().includes("square");
-    const distanceThreshold = isSquare ? Math.max(threshold * 0.5, 10) : threshold;
-    const requiredCoverage = isSquare ? 0.9 : 0.7;
+    const distanceThreshold = isSquare ? Math.max(threshold * 0.4, 8) : threshold;
+    const requiredCoverage = isSquare ? 0.95 : 0.7;
 
     // Calculate total shape length for coverage check
     let totalShapeLength = 0;
@@ -336,6 +336,9 @@ function evaluateTrace(userPts: Point[], shape: Shape, threshold: number): boole
     const segmentsCovered = new Set<number>();
 
     // For each user point, check its proximity to shape segments
+    let squareDeviation = 0;
+    let squareHitCount = 0;
+
     for (const up of userPts) {
       let minDist = Infinity;
       let closestSegment = -1;
@@ -393,6 +396,10 @@ function evaluateTrace(userPts: Point[], shape: Shape, threshold: number): boole
           const dy = p2.y - p1.y;
           coveredLength += Math.sqrt(dx * dx + dy * dy);
         }
+        if (isSquare) {
+          squareDeviation += minDist;
+          squareHitCount += 1;
+        }
       }
     }
 
@@ -404,7 +411,14 @@ function evaluateTrace(userPts: Point[], shape: Shape, threshold: number): boole
 
     if (isSquare) {
       const expectedSegments = pts.length > 1 ? pts.length - 1 : 0;
-      return coverageRatio >= requiredCoverage && segmentsCovered.size >= Math.max(3, expectedSegments);
+      if (segmentsCovered.size < expectedSegments) {
+        return false;
+      }
+      if (squareHitCount === 0) {
+        return false;
+      }
+      const averageDeviation = squareDeviation / squareHitCount;
+      return coverageRatio >= requiredCoverage && averageDeviation <= distanceThreshold * 0.5;
     }
 
     // Check if enough of the shape has been covered
