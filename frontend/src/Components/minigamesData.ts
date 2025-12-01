@@ -339,6 +339,7 @@ export const getRandomMinigames = (): Minigame[] => [
       currentShapeIndex: 0,
       threshold: 30,
       totalReward: 15,
+      transitionLabel: "Connect!",
     } satisfies Minigame;
   })(),
   (() => {

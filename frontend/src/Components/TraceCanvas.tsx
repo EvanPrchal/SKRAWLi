@@ -375,9 +375,15 @@ function evaluateTrace(userPts: Point[], shape: Shape, threshold: number): boole
       totalShapeLength += Math.sqrt(dx * dx + dy * dy);
     }
 
+    const isSingleSegmentLine = pts.length === 2;
+    const segmentLength = isSingleSegmentLine
+      ? Math.sqrt((pts[1].x - pts[0].x) * (pts[1].x - pts[0].x) + (pts[1].y - pts[0].y) * (pts[1].y - pts[0].y))
+      : 0;
+
     // Track how much of the shape has been traced
     let coveredLength = 0;
     const segmentsCovered = new Set<number>();
+    let overshootDetected = false;
 
     // For each user point, check its proximity to shape segments
     let squareDeviation = 0;
@@ -401,9 +407,16 @@ function evaluateTrace(userPts: Point[], shape: Shape, threshold: number): boole
         const dot = A * C + B * D;
         const len_sq = C * C + D * D;
 
-        let param = -1;
-        if (len_sq !== 0) {
-          param = dot / len_sq;
+        let param = len_sq !== 0 ? dot / len_sq : -1;
+
+        if (isSingleSegmentLine && (param < 0 || param > 1)) {
+          const overshootAmount = param < 0 ? -param : param - 1;
+          const overshootDistance = overshootAmount * Math.sqrt(len_sq);
+          // Fail if the line extends more than 25% of original length beyond an endpoint (or well past threshold)
+          const maxAllowed = Math.max(threshold * 1.1, segmentLength * 0.25);
+          if (overshootDistance > maxAllowed) {
+            overshootDetected = true;
+          }
         }
 
         let xx, yy;
@@ -448,6 +461,10 @@ function evaluateTrace(userPts: Point[], shape: Shape, threshold: number): boole
     }
 
     if (totalShapeLength === 0) {
+      return false;
+    }
+
+    if (overshootDetected) {
       return false;
     }
 

@@ -93,7 +93,7 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
               setCountdownValue("");
               setTimerActive(true);
               setHasShownCountdown(true);
-            }, 500);
+            }, 1000);
           }, 1000);
         }, 1000);
       }, 1000);
@@ -119,7 +119,7 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
         onTimeUpdate(nextTime);
         setTimerActive(true);
         setHasShownCountdown(true);
-      }, 1500);
+      }, 1000);
       return () => clearTimeout(timer);
     }
   }, [showTransition, pendingMinigame, initialTime, onTimeUpdate, getRandomMinigame]);

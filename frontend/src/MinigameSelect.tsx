@@ -112,13 +112,18 @@ const MinigameSelect = () => {
     }
   };
 
+  const freshCopy = (minigame: Minigame): Minigame => ({
+    ...minigame,
+    shapes: minigame.shapes.map((shape) => ({ ...shape })),
+  });
+
   const handleMinigameSelect = (minigame: Minigame) => {
     const currentDifficulty = readDifficultyLevel();
     const latestTime = timeForDifficulty(currentDifficulty);
     setDifficultyLevel(currentDifficulty);
     setConfiguredMinigameTime(latestTime);
     setTimeRemaining(latestTime);
-    setSelectedMinigame(minigame);
+    setSelectedMinigame(freshCopy(minigame));
     setGameOver(false);
     setCoins(0);
     setLives(3);
@@ -141,6 +146,11 @@ const MinigameSelect = () => {
       notificationTimeoutRef.current = null;
     }
     setNotification("");
+  };
+
+  const handlePlayAgain = () => {
+    if (!selectedMinigame) return;
+    handleMinigameSelect(selectedMinigame);
   };
 
   useEffect(() => {
@@ -203,6 +213,9 @@ const MinigameSelect = () => {
           <p className="text-sm opacity-75">
             Difficulty: {difficultyLevel.charAt(0).toUpperCase() + difficultyLevel.slice(1)} ({multiplierForDifficulty(difficultyLevel)}x multiplier)
           </p>
+          <button onClick={handlePlayAgain} className="text-skrawl-purple hover:text-skrawl-magenta transition-colors pt-2">
+            Play Again
+          </button>
           <button onClick={handleBackToSelect} className="text-skrawl-purple hover:text-skrawl-magenta transition-colors pt-2">
             Back to Selection
           </button>
