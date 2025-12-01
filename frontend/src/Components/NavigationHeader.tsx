@@ -14,6 +14,9 @@ const NavigationHeader = () => {
           <Link to="/minigameselect" className="hover:text-skrawl-magenta transition-colors">
             Minigame Select
           </Link>
+          <Link to="/freedraw" className="hover:text-skrawl-magenta transition-colors">
+            Free Draw
+          </Link>
           <Link to="/shop" className="hover:text-skrawl-magenta transition-colors">
             Shop
           </Link>
