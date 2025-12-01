@@ -38,6 +38,8 @@ const FreeDraw = () => {
   const [profileBackground, setProfileBackground] = useState<string>("bg-skrawl-black");
   const [profileBgStyle, setProfileBgStyle] = useState<Record<string, string>>({});
   const [profileBgLoaded, setProfileBgLoaded] = useState<boolean>(false);
+  const drawingSurfaceRef = useRef<HTMLDivElement | null>(null);
+  const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
 
   // Load owned brush effects
   useEffect(() => {
@@ -241,9 +243,17 @@ const FreeDraw = () => {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  const updateCursorIndicator = (e: React.PointerEvent) => {
+    const surface = drawingSurfaceRef.current;
+    if (!surface) return;
+    const rect = surface.getBoundingClientRect();
+    setCursorPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  };
+
   // Handle drawing state for rainbow brush
   const handlePointerDown = (e?: React.PointerEvent) => {
     isDrawingRef.current = true;
+    if (e) updateCursorIndicator(e);
     if (activeBrush === "pixel" && pixelCanvasRef.current && e) {
       pixelCurrentStrokeRef.current = [];
       addPixelPoint(e);
@@ -255,6 +265,7 @@ const FreeDraw = () => {
 
   const handlePointerUp = () => {
     isDrawingRef.current = false;
+    // Keep cursor indicator visible until we leave the drawing area
     if (activeBrush === "pixel" && pixelCurrentStrokeRef.current.length) {
       const strokeCopy = [...pixelCurrentStrokeRef.current];
       setPixelStrokes((prev) => [...prev, strokeCopy]);
@@ -363,39 +374,57 @@ const FreeDraw = () => {
     addRainbowPoint(e);
   };
 
+  const handleSurfacePointerMove = (e: React.PointerEvent) => {
+    updateCursorIndicator(e);
+  };
+
+  const handleSurfacePointerLeave = () => {
+    setCursorPos(null);
+    handlePointerUp();
+  };
+
   // Determine dynamic background classes (exclude tailwind class if using hex style)
   const containerBgClass = profileBackground.startsWith("#") ? "" : profileBackground;
 
   const ready = useDataReady([ownedBrushesLoaded, profileBgLoaded]);
   if (!ready) return <Loading />;
   return (
-    <div className={`min-h-screen ${containerBgClass} bg-[url('/src/assets/images/background.png')] bg-cover`} style={profileBgStyle}>
+    <div className={`min-h-screen ${containerBgClass} bg-[url('/src/assets/images/background.png')] bg-cover font-body`} style={profileBgStyle}>
       <NavigationHeader />
 
       <div className="mx-auto max-w-7xl p-4 h-[calc(100vh-80px)]">
         <div className="w-full h-full flex gap-4">
           {/* Canvas area (left) */}
           <div
-            className="flex-1 bg-skrawl-white rounded-md border border-skrawl-purple/20 overflow-hidden flex relative"
+            className="flex-1 bg-skrawl-white rounded-md border border-skrawl-purple/20 overflow-hidden flex relative font-body cursor-none"
+            ref={drawingSurfaceRef}
             onPointerDown={(e) => handlePointerDown(e)}
+            onPointerMove={handleSurfacePointerMove}
             onPointerUp={handlePointerUp}
+            onPointerLeave={handleSurfacePointerLeave}
           >
             {activeBrush === "pixel" ? (
               <canvas
                 ref={pixelCanvasRef}
                 onPointerDown={(e) => handlePointerDown(e)}
-                onPointerMove={handlePixelPointerMove}
+                onPointerMove={(e) => {
+                  updateCursorIndicator(e);
+                  handlePixelPointerMove(e);
+                }}
                 onPointerUp={handlePointerUp}
-                onPointerLeave={handlePointerUp}
+                onPointerLeave={handleSurfacePointerLeave}
                 style={{ flex: 1, touchAction: "none", width: "100%", height: "100%", backgroundColor: "#ffffff" }}
               />
             ) : activeBrush === "rainbow" ? (
               <canvas
                 ref={rainbowCanvasRef}
                 onPointerDown={(e) => handlePointerDown(e)}
-                onPointerMove={handleRainbowPointerMove}
+                onPointerMove={(e) => {
+                  updateCursorIndicator(e);
+                  handleRainbowPointerMove(e);
+                }}
                 onPointerUp={handlePointerUp}
-                onPointerLeave={handlePointerUp}
+                onPointerLeave={handleSurfacePointerLeave}
                 style={{ flex: 1, touchAction: "none", width: "100%", height: "100%", backgroundColor: "#ffffff" }}
               />
             ) : (
@@ -420,6 +449,22 @@ const FreeDraw = () => {
                 {activeBrush === "spray-paint" && "💨 Spray Paint"}
                 {activeBrush === "pixel" && "🟦 Pixel"}
               </div>
+            )}
+            {cursorPos && (
+              <div
+                className="pointer-events-none absolute border-2 cursor-none"
+                style={{
+                  left: cursorPos.x,
+                  top: cursorPos.y,
+                  width: `${Math.max(4, activeBrush === "pixel" ? size : getEffectiveStrokeWidth())}px`,
+                  height: `${Math.max(4, activeBrush === "pixel" ? size : getEffectiveStrokeWidth())}px`,
+                  borderRadius: activeBrush === "pixel" ? "12%" : "9999px",
+                  borderColor: isEraser ? "#E81E65" : getEffectiveColor(),
+                  transform: "translate(-50%, -50%)",
+                  boxShadow: isEraser ? "0 0 0 1px rgba(36,31,33,0.15)" : "none",
+                  backgroundColor: isEraser ? "rgba(255,255,255,0.2)" : "transparent",
+                }}
+              />
             )}
           </div>
 
@@ -447,7 +492,7 @@ const FreeDraw = () => {
               <div className="flex gap-2">
                 <button
                   onClick={() => setIsEraser(false)}
-                  className={`px-3 py-1 rounded-md border ${
+                  className={`px-3 py-1 rounded-md border font-body text-sm ${
                     !isEraser ? "bg-skrawl-purple text-white border-skrawl-purple" : "bg-white text-skrawl-purple border-skrawl-purple/40"
                   }`}
                   title="Brush (B)"
@@ -456,7 +501,7 @@ const FreeDraw = () => {
                 </button>
                 <button
                   onClick={() => setIsEraser(true)}
-                  className={`px-3 py-1 rounded-md border ${
+                  className={`px-3 py-1 rounded-md border font-body text-sm ${
                     isEraser ? "bg-skrawl-purple text-white border-skrawl-purple" : "bg-white text-skrawl-purple border-skrawl-purple/40"
                   }`}
                   title="Eraser (E)"
@@ -543,22 +588,30 @@ const FreeDraw = () => {
             <div className="mt-auto flex flex-col gap-2">
               <button
                 onClick={handleUndo}
-                className="px-3 py-2 rounded-md bg-white border border-skrawl-purple/40 hover:bg-skrawl-white"
+                className="px-3 py-2 rounded-md bg-white border border-skrawl-purple/40 hover:bg-skrawl-white font-body text-body"
                 title="Undo (⌘/Ctrl+Z)"
               >
                 Undo
               </button>
               <button
                 onClick={handleRedo}
-                className="px-3 py-2 rounded-md bg-white border border-skrawl-purple/40 hover:bg-skrawl-white"
+                className="px-3 py-2 rounded-md bg-white border border-skrawl-purple/40 hover:bg-skrawl-white font-body text-body"
                 title="Redo (Shift+⌘/Ctrl+Z)"
               >
                 Redo
               </button>
-              <button onClick={handleClear} className="px-3 py-2 rounded-md bg-skrawl-purple text-white hover:bg-skrawl-magenta" title="Clear canvas">
+              <button
+                onClick={handleClear}
+                className="px-3 py-2 rounded-md bg-skrawl-purple text-white hover:bg-skrawl-magenta font-body text-body"
+                title="Clear canvas"
+              >
                 Clear
               </button>
-              <button onClick={handleSave} className="px-3 py-2 rounded-md bg-skrawl-purple text-white hover:bg-skrawl-magenta" title="Save PNG">
+              <button
+                onClick={handleSave}
+                className="px-3 py-2 rounded-md bg-skrawl-purple text-white hover:bg-skrawl-magenta font-body text-body"
+                title="Save PNG"
+              >
                 Save PNG
               </button>
             </div>
