@@ -453,22 +453,42 @@ function evaluateTrace(userPts: Point[], shape: Shape, threshold: number): boole
     const ellipse = shape as EllipseShape;
     const { center, radiusX, radiusY } = ellipse;
 
+    const rotation = ellipse.rotation ?? 0;
+    const cosR = Math.cos(-rotation);
+    const sinR = Math.sin(-rotation);
+
     const anglesCovered = new Set<number>();
+    const angleStep = 10;
+    const requiredDegrees = 216;
     const maxRadius = Math.max(radiusX, radiusY);
-    const normalizedThreshold = threshold / maxRadius;
+    const effectiveThreshold = Math.max(threshold * 1.5, Math.min(18, maxRadius * 0.12));
 
     for (const up of userPts) {
       const dx = up.x - center.x;
       const dy = up.y - center.y;
-      const normalizedDistance = Math.sqrt((dx * dx) / (radiusX * radiusX) + (dy * dy) / (radiusY * radiusY));
 
-      if (Math.abs(normalizedDistance - 1) <= normalizedThreshold) {
-        const angle = Math.round((((Math.atan2(dy, dx) * 180) / Math.PI + 360) % 360) / 5) * 5;
-        anglesCovered.add(angle);
+      // rotate point into ellipse's local frame
+      const localX = dx * cosR - dy * sinR;
+      const localY = dx * sinR + dy * cosR;
+
+      const angle = Math.atan2(localY, localX);
+      const distance = Math.sqrt(localX * localX + localY * localY);
+
+      const cosA = Math.cos(angle);
+      const sinA = Math.sin(angle);
+      const denom = Math.sqrt(radiusY * radiusY * cosA * cosA + radiusX * radiusX * sinA * sinA);
+      if (denom === 0) {
+        continue;
+      }
+      const expectedRadius = (radiusX * radiusY) / denom;
+
+      if (Math.abs(distance - expectedRadius) <= effectiveThreshold) {
+        const bucket = Math.round((((angle * 180) / Math.PI + 360) % 360) / angleStep) * angleStep;
+        anglesCovered.add(bucket);
       }
     }
 
-    return anglesCovered.size * 5 >= 252;
+    return anglesCovered.size * angleStep >= requiredDegrees;
   }
 
   return false;
