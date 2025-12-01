@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import Loading from "./Components/Loading";
 import Minigames from "./Components/Minigames";
@@ -63,6 +63,9 @@ const MinigameSelect = () => {
   const [configuredMinigameTime, setConfiguredMinigameTime] = useState<number>(() => timeForDifficulty(readDifficultyLevel()));
   const [timeRemaining, setTimeRemaining] = useState<number>(() => timeForDifficulty(readDifficultyLevel()));
   const [difficultyLevel, setDifficultyLevel] = useState<string>(() => readDifficultyLevel());
+  const [notification, setNotification] = useState<string>("");
+  const notificationTimeoutRef = useRef<number | null>(null);
+  const [minigamesCompleted, setMinigamesCompleted] = useState<number>(0);
 
   const minigameOptions = getMinigameOptions();
 
@@ -72,6 +75,23 @@ const MinigameSelect = () => {
       const multiplier = multiplierForDifficulty(difficultyLevel);
       const adjustedReward = Math.round(reward * multiplier);
       setCoins((c) => c + adjustedReward);
+
+      const newCount = minigamesCompleted + 1;
+      setMinigamesCompleted(newCount);
+
+      if (newCount % 5 === 0 && configuredMinigameTime > 5) {
+        const newTime = configuredMinigameTime - 2;
+        setConfiguredMinigameTime(newTime);
+        setTimeRemaining(newTime);
+        if (notificationTimeoutRef.current !== null) {
+          window.clearTimeout(notificationTimeoutRef.current);
+        }
+        setNotification("Time Reduced!");
+        notificationTimeoutRef.current = window.setTimeout(() => {
+          setNotification("");
+          notificationTimeoutRef.current = null;
+        }, 1000);
+      }
     } else {
       setLives((l) => {
         const nextLives = l - 1;
@@ -79,6 +99,14 @@ const MinigameSelect = () => {
           setGameOver(true);
           return 0;
         }
+        if (notificationTimeoutRef.current !== null) {
+          window.clearTimeout(notificationTimeoutRef.current);
+        }
+        setNotification("-1 Life");
+        notificationTimeoutRef.current = window.setTimeout(() => {
+          setNotification("");
+          notificationTimeoutRef.current = null;
+        }, 1000);
         return nextLives;
       });
     }
@@ -94,6 +122,12 @@ const MinigameSelect = () => {
     setGameOver(false);
     setCoins(0);
     setLives(3);
+    setMinigamesCompleted(0);
+    if (notificationTimeoutRef.current !== null) {
+      window.clearTimeout(notificationTimeoutRef.current);
+      notificationTimeoutRef.current = null;
+    }
+    setNotification("");
   };
 
   const handleBackToSelect = () => {
@@ -101,14 +135,34 @@ const MinigameSelect = () => {
     setGameOver(false);
     setCoins(0);
     setLives(3);
+    setMinigamesCompleted(0);
+    if (notificationTimeoutRef.current !== null) {
+      window.clearTimeout(notificationTimeoutRef.current);
+      notificationTimeoutRef.current = null;
+    }
+    setNotification("");
   };
+
+  useEffect(() => {
+    return () => {
+      if (notificationTimeoutRef.current !== null) {
+        window.clearTimeout(notificationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (isLoading) {
     return <Loading />;
   }
 
   return (
-    <GameplayLayout lives={lives} timeRemaining={timeRemaining} userImage={user?.picture} userName={user?.name ?? (isGuest ? "Guest" : undefined)}>
+    <GameplayLayout
+      lives={lives}
+      timeRemaining={timeRemaining}
+      userImage={user?.picture}
+      userName={user?.name ?? (isGuest ? "Guest" : undefined)}
+      notification={notification}
+    >
       {!selectedMinigame ? (
         <div className="flex flex-col h-full justify-around items-center p-8">
           <h2 className="text-header font-header text-skrawl-purple">Select a Minigame</h2>
@@ -139,6 +193,7 @@ const MinigameSelect = () => {
             onTimeUpdate={setTimeRemaining}
             initialTime={configuredMinigameTime}
             specificMinigame={selectedMinigame}
+            skipCountdown={minigamesCompleted > 0 || notification !== ""}
           />
         </div>
       ) : (
