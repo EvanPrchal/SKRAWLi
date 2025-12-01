@@ -23,13 +23,12 @@ const GameplayLayout: React.FC<GameplayLayoutProps> = ({ lives, timeRemaining, u
           <img src="./src/assets/svgs/time.png" alt="Seconds" />
         </section>
       </section>
-      <div className="w-4/6 h-4/6 flex flex-col bg-skrawl-white rounded-b-lg">
-        {notification ? (
-          <div className="w-full h-full flex items-center justify-center bg-skrawl-white">
+      <div className="w-4/6 h-4/6 flex flex-col bg-skrawl-white rounded-b-lg relative overflow-hidden">
+        {children}
+        {notification && (
+          <div className="absolute inset-0 flex items-center justify-center bg-skrawl-white">
             <div className="text-logotype font-logotype text-skrawl-purple text-center">{notification}</div>
           </div>
-        ) : (
-          children
         )}
       </div>
     </div>

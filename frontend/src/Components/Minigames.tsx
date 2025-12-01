@@ -30,6 +30,17 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
   const [pendingMinigame, setPendingMinigame] = useState<Minigame | null>(null);
   const [hasShownCountdown, setHasShownCountdown] = useState(skipCountdown);
 
+  // Ensure external skip flag permanently suppresses the countdown (e.g. after notifications)
+  useEffect(() => {
+    if (skipCountdown && !hasShownCountdown) {
+      setHasShownCountdown(true);
+      setCountdownValue("");
+      if (!timerActive) {
+        setTimerActive(true);
+      }
+    }
+  }, [skipCountdown, hasShownCountdown, timerActive]);
+
   // Timer effect
   useEffect(() => {
     if (!timerActive || showTransition) return;
@@ -67,7 +78,7 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
     }
   }, [initialTime, timerActive, onTimeUpdate]);
 
-  // Initial countdown effect
+  // Initial countdown effect (runs only once unless explicitly reset)
   useEffect(() => {
     const startCountdown = () => {
       setCountdownValue("3");
@@ -106,6 +117,7 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
         setTimeLeft(nextTime);
         onTimeUpdate(nextTime);
         setTimerActive(true);
+        setHasShownCountdown(true);
       }, 1500);
       return () => clearTimeout(timer);
     }
@@ -139,13 +151,17 @@ const Minigames: React.FC<MinigamesProps> = ({ onComplete, onGameOver, onTimeUpd
         }));
       }
     } else {
-      // Failed attempt - regenerate a new minigame of the same type
-      const newMinigame = getRandomMinigame();
-      // Keep trying to get the same type of minigame
+      // Failed attempt - immediately swap to next minigame (no transition overlay)
       const currentType = currentMinigame.id;
       const randomMinigames = getRandomMinigames();
-      const sameTypeMinigame = randomMinigames.find((m) => m.id === currentType) || newMinigame;
-      setCurrentMinigame(sameTypeMinigame);
+      const nextGame = randomMinigames.find((m) => m.id === currentType) || getRandomMinigame();
+      setCurrentMinigame(nextGame);
+      setPendingMinigame(null);
+      const nextTime = initialTime ?? MINIGAME_TIME;
+      setTimeLeft(nextTime);
+      onTimeUpdate(nextTime);
+      setTimerActive(true);
+      setHasShownCountdown(true);
       onComplete(false, 0); // Failed attempt
     }
   };

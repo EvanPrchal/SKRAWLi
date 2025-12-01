@@ -54,7 +54,8 @@ const Run = () => {
   const [ownedBadges, setOwnedBadges] = useState<Set<string>>(new Set());
   const [badgesLoaded, setBadgesLoaded] = useState<boolean>(false);
   const [minigamesCompleted, setMinigamesCompleted] = useState<number>(0);
-  const [speedUpNotification, setSpeedUpNotification] = useState<string>("");
+  const [notification, setNotification] = useState<string>("");
+  const notificationTimeoutRef = useRef<number | null>(null);
   const [difficultyLevel, setDifficultyLevel] = useState<string>(() => readDifficultyLevel());
 
   useEffect(() => {
@@ -156,8 +157,14 @@ const Run = () => {
         const newTime = configuredMinigameTime - 2;
         setConfiguredMinigameTime(newTime);
         setTimeRemaining(newTime);
-        setSpeedUpNotification(`Time Reduced!`);
-        setTimeout(() => setSpeedUpNotification(""), 3000);
+        if (notificationTimeoutRef.current !== null) {
+          window.clearTimeout(notificationTimeoutRef.current);
+        }
+        setNotification("Time Reduced!");
+        notificationTimeoutRef.current = window.setTimeout(() => {
+          setNotification("");
+          notificationTimeoutRef.current = null;
+        }, 1000);
       }
     } else {
       streakRef.current = 0;
@@ -167,6 +174,14 @@ const Run = () => {
           setGameOver(true);
           return 0;
         }
+        if (notificationTimeoutRef.current !== null) {
+          window.clearTimeout(notificationTimeoutRef.current);
+        }
+        setNotification("-1 Life");
+        notificationTimeoutRef.current = window.setTimeout(() => {
+          setNotification("");
+          notificationTimeoutRef.current = null;
+        }, 1000);
         return nextLives;
       });
     }
@@ -185,12 +200,24 @@ const Run = () => {
     completedCountRef.current = 0;
     streakRef.current = 0;
     setMinigamesCompleted(0);
-    setSpeedUpNotification("");
+    if (notificationTimeoutRef.current !== null) {
+      window.clearTimeout(notificationTimeoutRef.current);
+      notificationTimeoutRef.current = null;
+    }
+    setNotification("");
   };
 
   const handleStartOver = () => {
     handleStart();
   };
+
+  useEffect(() => {
+    return () => {
+      if (notificationTimeoutRef.current !== null) {
+        window.clearTimeout(notificationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const ready = useDataReady([!isLoading, badgesLoaded]);
   if (!ready) return <Loading />;
@@ -201,7 +228,7 @@ const Run = () => {
       timeRemaining={timeRemaining}
       userImage={user?.picture}
       userName={user?.name ?? (isGuest ? "Guest" : undefined)}
-      notification={speedUpNotification}
+      notification={notification}
     >
       {!started ? (
         <div className="flex flex-col h-full justify-center items-center gap-4">
@@ -225,7 +252,7 @@ const Run = () => {
             }}
             onTimeUpdate={setTimeRemaining}
             initialTime={configuredMinigameTime}
-            skipCountdown={minigamesCompleted > 0}
+            skipCountdown={minigamesCompleted > 0 || notification !== ""}
           />
         </div>
       ) : (
