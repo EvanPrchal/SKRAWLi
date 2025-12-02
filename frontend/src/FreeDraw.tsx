@@ -6,10 +6,9 @@ import Loading from "./Components/Loading";
 import { useDataReady } from "./lib/useDataReady";
 import { useAuth0 } from "@auth0/auth0-react";
 
-type BrushEffect = "normal" | "neon-glow" | "rainbow" | "spray-paint" | "pixel";
+type BrushEffect = "normal" | "rainbow" | "pixel";
 
-type SprayDot = { x: number; y: number; alpha: number; radius: number };
-type StrokePoint = { x: number; y: number; hue?: number; dots?: SprayDot[] };
+type StrokePoint = { x: number; y: number; hue?: number };
 type Stroke = { brush: BrushEffect; color: string; size: number; erase: boolean; points: StrokePoint[] };
 
 const ERASE_COLOR = "rgba(0,0,0,1)";
@@ -36,25 +35,6 @@ const appendPointToStroke = (stroke: Stroke, x: number, y: number) => {
     case "rainbow": {
       const hue = (stroke.points.length * 12) % 360;
       stroke.points.push({ x, y, hue });
-      return;
-    }
-    case "spray-paint": {
-      const density = Math.max(8, Math.floor(stroke.size * 1.3));
-      const maxRadius = Math.max(6, stroke.size * 0.6);
-      const dots: SprayDot[] = [];
-      for (let i = 0; i < density; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const radius = Math.random() * maxRadius;
-        const px = x + Math.cos(angle) * radius;
-        const py = y + Math.sin(angle) * radius;
-        dots.push({
-          x: px,
-          y: py,
-          alpha: Math.random() * 0.3 + 0.2,
-          radius: Math.random() * (stroke.size * 0.2) + stroke.size * 0.05,
-        });
-      }
-      stroke.points.push({ x, y, dots });
       return;
     }
     default: {
@@ -102,29 +82,11 @@ const renderStroke = (ctx: CanvasRenderingContext2D, stroke: Stroke) => {
       }
       break;
     }
-    case "spray-paint": {
-      ctx.fillStyle = stroke.erase ? ERASE_COLOR : stroke.color;
-      for (const point of stroke.points) {
-        const dots = point.dots ?? [];
-        for (const dot of dots) {
-          ctx.globalAlpha = stroke.erase ? 1 : dot.alpha;
-          ctx.beginPath();
-          ctx.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-      ctx.globalAlpha = 1;
-      break;
-    }
     default: {
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
       ctx.lineWidth = stroke.size;
       ctx.strokeStyle = stroke.erase ? ERASE_COLOR : stroke.color;
-      if (stroke.brush === "neon-glow" && !stroke.erase) {
-        ctx.shadowBlur = Math.max(8, stroke.size * 1.5);
-        ctx.shadowColor = stroke.color;
-      }
       if (stroke.points.length === 1) {
         const point = stroke.points[0];
         ctx.fillStyle = stroke.erase ? ERASE_COLOR : stroke.color;
@@ -224,16 +186,6 @@ const FreeDraw = () => {
     return color;
   };
 
-  const getEffectiveStrokeWidth = () => {
-    if (activeBrush === "spray-paint") {
-      return size * 0.5;
-    }
-    if (activeBrush === "neon-glow") {
-      return size * 1.2;
-    }
-    return size;
-  };
-
   useEffect(() => {
     const root = document.documentElement;
     const styles = getComputedStyle(root);
@@ -317,7 +269,7 @@ const FreeDraw = () => {
     e.stopPropagation();
     ensureCanvasSize();
     const { x, y } = getCanvasPosition(e);
-    const strokeSize = activeBrush === "pixel" ? size : getEffectiveStrokeWidth();
+    const strokeSize = size;
     const strokeColor = getEffectiveColor();
     const stroke: Stroke = {
       brush: activeBrush,
@@ -449,7 +401,7 @@ const FreeDraw = () => {
   const ready = useDataReady([ownedBrushesLoaded, profileBgLoaded]);
   if (!ready) return <Loading />;
 
-  const previewSize = Math.max(4, activeBrush === "pixel" ? size : getEffectiveStrokeWidth());
+  const previewSize = Math.max(4, size);
 
   return (
     <div className={`min-h-screen ${containerBgClass} bg-[url('/src/assets/images/background.png')] bg-cover font-body`} style={profileBgStyle}>
@@ -474,9 +426,7 @@ const FreeDraw = () => {
             />
             {activeBrush !== "normal" && !isEraser && (
               <div className="absolute top-2 left-2 bg-black/70 text-white px-3 py-1 rounded-full text-xs font-body">
-                {activeBrush === "neon-glow" && "✨ Neon Glow"}
                 {activeBrush === "rainbow" && "🌈 Rainbow"}
-                {activeBrush === "spray-paint" && "💨 Spray Paint"}
                 {activeBrush === "pixel" && "🟦 Pixel"}
               </div>
             )}
@@ -508,8 +458,6 @@ const FreeDraw = () => {
                   className="px-3 py-2 rounded-md border border-skrawl-purple/40 bg-white text-skrawl-purple font-body text-sm focus:outline-none focus:ring-2 focus:ring-skrawl-magenta"
                 >
                   <option value="normal">Normal</option>
-                  {ownedBrushes.includes("neon-glow-brush") && <option value="neon-glow">✨ Neon Glow</option>}
-                  {ownedBrushes.includes("spray-paint-brush") && <option value="spray-paint">💨 Spray Paint</option>}
                   {ownedBrushes.includes("rainbow-brush") && <option value="rainbow">🌈 Rainbow</option>}
                   {ownedBrushes.includes("pixel-brush") && <option value="pixel">🟦 Pixel Brush</option>}
                 </select>

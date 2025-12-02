@@ -61,12 +61,3 @@
     --color-skrawl-purple: #dd2d4a;
     --color-skrawl-white: #cbeef3;
 }
-
-/* Brush effect styles for FreeDraw */
-.neon-glow-canvas canvas {
-    filter: drop-shadow(0 0 8px currentColor) drop-shadow(0 0 4px currentColor);
-}
-
-.spray-paint-canvas canvas {
-    opacity: 0.85;
-}
