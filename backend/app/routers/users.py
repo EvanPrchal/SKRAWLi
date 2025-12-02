@@ -56,6 +56,77 @@ class ProfileResponse(BaseModel):
     showcased_badges: str | None
     picture_url: str | None
 
+
+class UpdateProfileRequest(BaseModel):
+    display_name: str | None = None
+    bio: str | None = None
+    profile_background: str | None = None
+    showcased_badges: str | None = None
+    picture_url: str | None = None
+
+
+def _serialize_profile(user: User) -> ProfileResponse:
+    return ProfileResponse(
+        id=user.id,
+        display_name=user.display_name,
+        bio=user.bio,
+        profile_background=user.profile_background,
+        showcased_badges=user.showcased_badges,
+        picture_url=user.picture_url,
+    )
+
+
+@router.get("/users/me/profile", response_model=ProfileResponse)
+async def get_my_profile(current_user: User = Depends(get_current_user)) -> ProfileResponse:
+    """Return the authenticated user's profile."""
+    return _serialize_profile(current_user)
+
+
+@router.put("/users/me/profile", response_model=ProfileResponse)
+async def update_my_profile(
+    request: UpdateProfileRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ProfileResponse:
+    """Update mutable profile fields in a single request."""
+    updated = False
+
+    if request.display_name is not None:
+        trimmed = request.display_name.strip()
+        if not trimmed:
+            raise HTTPException(status_code=400, detail="Display name cannot be empty")
+        if len(trimmed) > 50:
+            raise HTTPException(status_code=400, detail="Display name must be 50 characters or less")
+        if current_user.display_name != trimmed:
+            current_user.display_name = trimmed
+            updated = True
+
+    if request.bio is not None:
+        if len(request.bio) > 500:
+            raise HTTPException(status_code=400, detail="Bio must be 500 characters or less")
+        if current_user.bio != request.bio:
+            current_user.bio = request.bio
+            updated = True
+
+    if request.profile_background is not None and current_user.profile_background != request.profile_background:
+        current_user.profile_background = request.profile_background
+        updated = True
+
+    if request.showcased_badges is not None and current_user.showcased_badges != request.showcased_badges:
+        current_user.showcased_badges = request.showcased_badges
+        updated = True
+
+    if request.picture_url is not None and current_user.picture_url != request.picture_url:
+        current_user.picture_url = request.picture_url
+        updated = True
+
+    if updated:
+        db.add(current_user)
+        db.commit()
+        db.refresh(current_user)
+
+    return _serialize_profile(current_user)
+
 @router.get("/users/me/coins", response_model=CoinsResponse)
 async def get_coins(
     current_user: User = Depends(get_current_user),
@@ -208,11 +279,4 @@ async def get_user_profile(user_id: int, db: Session = Depends(get_db)) -> Profi
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return ProfileResponse(
-        id=user.id,
-        display_name=user.display_name,
-        bio=user.bio,
-        profile_background=user.profile_background,
-        showcased_badges=user.showcased_badges,
-        picture_url=user.picture_url,
-    )
+    return _serialize_profile(user)

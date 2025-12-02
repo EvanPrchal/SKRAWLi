@@ -4,8 +4,8 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlmodel import Session, select
 from decouple import config
+
 from app.models import User
-from sqlmodel import select
 from app.database import get_db
 
 # Auth0 configuration from environment
@@ -50,6 +50,17 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) 
             detail=f"Unable to validate credentials: {str(e)}"
         )
 
+
+def _extract_display_name(payload: dict) -> str | None:
+    """Pick a usable display name from the Auth0 token payload."""
+    for key in ("name", "nickname", "preferred_username", "given_name", "email"):
+        value = payload.get(key)
+        if value:
+            trimmed = str(value).strip()
+            if trimmed:
+                return trimmed[:50]
+    return None
+
 def get_current_user(
     payload: dict = Depends(verify_token),
     db: Session = Depends(get_db)
@@ -67,8 +78,19 @@ def get_current_user(
     user = db.exec(statement).first()
     
     picture = payload.get("picture")
+    extracted_display_name = _extract_display_name(payload)
+    fallback_identifier = None
+    if auth0_sub:
+        parts = auth0_sub.split("|")
+        fallback_identifier = parts[-1] if parts else auth0_sub
+
     if not user:
-        user = User(auth0_sub=auth0_sub, coins=0, picture_url=picture)
+        user = User(
+            auth0_sub=auth0_sub,
+            coins=0,
+            picture_url=picture,
+            display_name=extracted_display_name,
+        )
         db.add(user)
         db.commit()
         db.refresh(user)
@@ -77,6 +99,18 @@ def get_current_user(
         if picture and user.picture_url != picture:
             user.picture_url = picture
             updated = True
+        if extracted_display_name:
+            stored_name = (user.display_name or "").strip()
+            should_update_name = False
+            if not stored_name:
+                should_update_name = True
+            elif fallback_identifier and stored_name == fallback_identifier:
+                should_update_name = True
+            elif stored_name == auth0_sub:
+                should_update_name = True
+            if should_update_name:
+                user.display_name = extracted_display_name
+                updated = True
         if updated:
             db.add(user)
             db.commit()

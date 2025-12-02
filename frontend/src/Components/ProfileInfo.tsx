@@ -24,6 +24,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profileBackground, onBackgrou
   const api = useApi();
   const [bio, setBio] = useState<string>("");
   const [displayName, setDisplayName] = useState<string>("");
+  const [pictureUrl, setPictureUrl] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasColorPicker, setHasColorPicker] = useState(false);
@@ -38,36 +39,46 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profileBackground, onBackgrou
   const [editShowcasedBadges, setEditShowcasedBadges] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!isLoading) {
-      Promise.all([
-        api
-          .getBio()
-          .then((data) => setBio(data.bio || ""))
-          .catch((err) => console.error("Failed to load bio:", err)),
-        api
-          .getDisplayName()
-          .then((data) => setDisplayName(data.display_name || user?.name || ""))
-          .catch((err) => console.error("Failed to load display name:", err)),
-        api
-          .getOwnedItems()
-          .then((items) => {
-            const ownsColorPicker = items.some((item) => item.item_id === "color-picker");
-            setHasColorPicker(ownsColorPicker);
-          })
-          .catch((err) => console.error("Failed to load owned items:", err)),
-        api
-          .getMyBadges()
-          .then((badges) => setOwnedBadges(badges))
-          .catch((err) => console.error("Failed to load badges:", err)),
-        api
-          .getShowcasedBadges()
-          .then((data) => {
-            const codes = data.showcased_badges ? data.showcased_badges.split(",").filter(Boolean) : [];
-            setShowcasedBadgeCodes(codes);
-          })
-          .catch((err) => console.error("Failed to load showcased badges:", err)),
-      ]);
-    }
+    if (isLoading) return;
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const [profileData, ownedItems, badges] = await Promise.all([api.getMyProfile(), api.getOwnedItems(), api.getMyBadges()]);
+        if (cancelled) return;
+        setBio(profileData.bio || "");
+        setDisplayName(profileData.display_name || user?.name || "");
+        setPictureUrl(profileData.picture_url || user?.picture || null);
+        const codes = profileData.showcased_badges ? profileData.showcased_badges.split(",").filter(Boolean) : [];
+        setShowcasedBadgeCodes(codes);
+        const ownsColorPicker = ownedItems.some((item) => item.item_id === "color-picker");
+        setHasColorPicker(ownsColorPicker);
+        setOwnedBadges(badges);
+
+        const needsDisplayNameSync = (!profileData.display_name || profileData.display_name.trim().length === 0) && user?.name;
+        const needsPictureSync = (!profileData.picture_url || profileData.picture_url.trim().length === 0) && user?.picture;
+        if ((needsDisplayNameSync || needsPictureSync) && !cancelled) {
+          try {
+            const synced = await api.updateMyProfile({
+              display_name: needsDisplayNameSync ? user?.name ?? null : undefined,
+              picture_url: needsPictureSync ? user?.picture ?? null : undefined,
+            });
+            if (!cancelled) {
+              setDisplayName(synced.display_name || user?.name || "");
+              setPictureUrl(synced.picture_url || user?.picture || null);
+            }
+          } catch (syncErr) {
+            console.error("Failed to sync Auth0 profile fields:", syncErr);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load profile:", err);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading]);
 
   const handleEdit = () => {
@@ -101,15 +112,20 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profileBackground, onBackgrou
     }
     setIsSaving(true);
     try {
-      await Promise.all([
-        api.updateDisplayName(editDisplayName),
-        api.updateBio(editBio),
-        api.updateProfileBackground(editProfileBackground),
-        api.updateShowcasedBadges(editShowcasedBadges.join(",")),
-      ]);
-      setDisplayName(editDisplayName);
-      setBio(editBio);
-      setShowcasedBadgeCodes(editShowcasedBadges);
+      const updated = await api.updateMyProfile({
+        display_name: editDisplayName,
+        bio: editBio,
+        profile_background: editProfileBackground,
+        showcased_badges: editShowcasedBadges.join(","),
+      });
+      setDisplayName(updated.display_name || "");
+      setBio(updated.bio || "");
+      const updatedCodes = updated.showcased_badges ? updated.showcased_badges.split(",").filter(Boolean) : [];
+      setShowcasedBadgeCodes(updatedCodes);
+      setEditShowcasedBadges(updatedCodes);
+      setPictureUrl(updated.picture_url || user?.picture || null);
+      onBackgroundChange(updated.profile_background || profileBackground);
+      setEditProfileBackground(updated.profile_background || profileBackground);
       setIsEditing(false);
     } catch (err) {
       console.error("Failed to save profile:", err);
@@ -138,7 +154,13 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profileBackground, onBackgrou
   return (
     <div className="text-center flex justify-around w-full gap-8">
       <section className="flex flex-col justify-center items-center space-y-4">
-        <img className="border-dotted border-3 p-3" src={user?.picture} alt={user?.name} />
+        {pictureUrl ? (
+          <img className="border-dotted border-3 p-3" src={pictureUrl} alt={displayName || user?.name || "Profile"} />
+        ) : (
+          <div className="border-dotted border-3 p-3 w-28 h-28 rounded-full flex items-center justify-center bg-skrawl-purple/10 text-skrawl-purple text-3xl font-header">
+            {(displayName || user?.name || "U").charAt(0).toUpperCase()}
+          </div>
+        )}
 
         {isEditing ? (
           <div className="flex flex-col gap-4 w-full max-w-md">

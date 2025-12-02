@@ -123,7 +123,30 @@ export function useApi() {
     async getUserProfile(userId: number): Promise<{ id: number; display_name: string | null; bio: string | null; profile_background: string | null; showcased_badges: string | null; picture_url: string | null }> {
       return fetchWithAuth(`/users/${userId}/profile`, { method: "GET" }, getAccessTokenSilently);
     },
-    async browseUsers(query: string, offset = 0, limit = 24): Promise<Array<{ id: number; display_name: string | null; bio: string | null; profile_background: string | null; picture_url: string | null }>> {
+    async getMyProfile(): Promise<{ id: number; display_name: string | null; bio: string | null; profile_background: string | null; showcased_badges: string | null; picture_url: string | null }> {
+      return fetchWithAuth(`/users/me/profile`, { method: "GET" }, getAccessTokenSilently);
+    },
+    async updateMyProfile(payload: {
+      display_name?: string | null;
+      bio?: string | null;
+      profile_background?: string | null;
+      showcased_badges?: string | null;
+      picture_url?: string | null;
+    }): Promise<{
+      id: number;
+      display_name: string | null;
+      bio: string | null;
+      profile_background: string | null;
+      showcased_badges: string | null;
+      picture_url: string | null;
+    }> {
+      return fetchWithAuth(
+        `/users/me/profile`,
+        { method: "PUT", body: JSON.stringify(payload) },
+        getAccessTokenSilently
+      );
+    },
+    async browseUsers(query: string, offset = 0, limit = 24): Promise<Array<{ id: number; display_name: string | null; bio: string | null; profile_background: string | null; picture_url: string | null; showcased_badges: string | null }>> {
       const params = new URLSearchParams();
       if (query) params.set("query", query);
       params.set("offset", String(offset));
@@ -144,7 +167,7 @@ export function useApi() {
     async declineFriendRequest(requestId: number): Promise<{ status: string }> {
       return fetchWithAuth(`/users/friends/request/${requestId}/decline`, { method: "POST" }, getAccessTokenSilently);
     },
-    async listFriends(): Promise<Array<{ id: number; display_name: string | null; bio: string | null; profile_background: string | null; picture_url: string | null }>> {
+    async listFriends(): Promise<Array<{ id: number; display_name: string | null; bio: string | null; profile_background: string | null; picture_url: string | null; showcased_badges: string | null }>> {
       return fetchWithAuth(`/users/me/friends`, { method: "GET" }, getAccessTokenSilently);
     },
     async removeFriend(friendUserId: number): Promise<{ status: string }> {

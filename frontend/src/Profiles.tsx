@@ -10,6 +10,7 @@ interface UserSummary {
   bio: string | null;
   profile_background: string | null;
   picture_url: string | null;
+  showcased_badges: string | null;
 }
 
 const Profiles = () => {

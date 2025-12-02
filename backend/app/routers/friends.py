@@ -15,6 +15,7 @@ class UserSummary(BaseModel):
     bio: str | None
     profile_background: str | None
     picture_url: str | None
+    showcased_badges: str | None
 
 class FriendRequestResponse(BaseModel):
     id: int
@@ -29,12 +30,16 @@ class FriendRequestsList(BaseModel):
     outbound: list[FriendRequestResponse]
 
 def summarize_user(u: User) -> UserSummary:
+    display_name = (u.display_name or "").strip() or None
+    if not display_name:
+        display_name = f"Player #{u.id}" if u.id is not None else None
     return UserSummary(
         id=u.id,
-        display_name=u.display_name,
+        display_name=display_name,
         bio=u.bio,
         profile_background=u.profile_background,
         picture_url=u.picture_url,
+        showcased_badges=u.showcased_badges,
     )
 
 @router.get("/users/browse", response_model=list[UserSummary])
