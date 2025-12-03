@@ -211,7 +211,7 @@ const Minigames: React.FC<MinigamesProps> = ({
             className="max-w-xs w-1/3 animate-ping [animation-duration:15s] "
           />
         ) : (
-          <div key={countdownValue} className="text-logotype font-logotype text-skrawl-purple">
+          <div key={countdownValue} className="text-logotype font-logotype animate-ping text-skrawl-purple">
             {countdownValue}
           </div>
         )}
