@@ -67,11 +67,33 @@ const MinigameSelect = () => {
   const notificationTimeoutRef = useRef<number | null>(null);
   const [minigamesCompleted, setMinigamesCompleted] = useState<number>(0);
   const [freezeTimer, setFreezeTimer] = useState<boolean>(false);
+  const [avatarMood, setAvatarMood] = useState<"neutral" | "happy" | "sad">("neutral");
+  const avatarMoodTimeoutRef = useRef<number | null>(null);
 
   const minigameOptions = getMinigameOptions();
 
+  const resetAvatarMood = () => {
+    if (avatarMoodTimeoutRef.current !== null) {
+      window.clearTimeout(avatarMoodTimeoutRef.current);
+      avatarMoodTimeoutRef.current = null;
+    }
+    setAvatarMood("neutral");
+  };
+
+  const flashAvatarMood = (mood: "happy" | "sad") => {
+    if (avatarMoodTimeoutRef.current !== null) {
+      window.clearTimeout(avatarMoodTimeoutRef.current);
+    }
+    setAvatarMood(mood);
+    avatarMoodTimeoutRef.current = window.setTimeout(() => {
+      setAvatarMood("neutral");
+      avatarMoodTimeoutRef.current = null;
+    }, 1200);
+  };
+
   const handleComplete = (success: boolean, reward: number) => {
     if (success) {
+      flashAvatarMood("happy");
       // Apply difficulty multiplier to reward
       const multiplier = multiplierForDifficulty(difficultyLevel);
       const adjustedReward = Math.round(reward * multiplier);
@@ -96,6 +118,7 @@ const MinigameSelect = () => {
         }, 1000);
       }
     } else {
+      flashAvatarMood("sad");
       setLives((l) => {
         const nextLives = l - 1;
         if (nextLives <= 0) {
@@ -134,6 +157,7 @@ const MinigameSelect = () => {
     setLives(3);
     setMinigamesCompleted(0);
     setFreezeTimer(false);
+    resetAvatarMood();
     if (notificationTimeoutRef.current !== null) {
       window.clearTimeout(notificationTimeoutRef.current);
       notificationTimeoutRef.current = null;
@@ -148,6 +172,7 @@ const MinigameSelect = () => {
     setLives(3);
     setMinigamesCompleted(0);
     setFreezeTimer(false);
+    resetAvatarMood();
     if (notificationTimeoutRef.current !== null) {
       window.clearTimeout(notificationTimeoutRef.current);
       notificationTimeoutRef.current = null;
@@ -165,6 +190,9 @@ const MinigameSelect = () => {
       if (notificationTimeoutRef.current !== null) {
         window.clearTimeout(notificationTimeoutRef.current);
       }
+      if (avatarMoodTimeoutRef.current !== null) {
+        window.clearTimeout(avatarMoodTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -176,9 +204,9 @@ const MinigameSelect = () => {
     <GameplayLayout
       lives={lives}
       timeRemaining={timeRemaining}
-      userImage={user?.picture}
       userName={user?.name ?? (isGuest ? "Guest" : undefined)}
       notification={notification}
+      avatarMood={avatarMood}
     >
       {!selectedMinigame ? (
         <div className="flex flex-col h-full justify-around items-center p-8">

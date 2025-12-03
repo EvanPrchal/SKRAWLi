@@ -52,7 +52,7 @@ const CATALOG: CatalogItem[] = [
     description: "The default SKRAWLi companion, ready to skrawl!",
     price: 0,
     category: "Characters",
-    previewImage: "/src/assets/images/pint2.png",
+    previewImage: "/src/assets/svgs/splotch_neutral.png",
   },
 
   // Themes
@@ -224,8 +224,8 @@ const Shop = () => {
     return localStorage.getItem("equippedBrush") || "smooth";
   });
   const [equippedCharacter, setEquippedCharacter] = useState<string>(() => {
-    if (typeof window === "undefined") return "/src/assets/images/pint2.png";
-    return localStorage.getItem("equippedCharacter") || "/src/assets/images/pint2.png";
+    if (typeof window === "undefined") return "/src/assets/svgs/splotch_neutral.png";
+    return localStorage.getItem("equippedCharacter") || "/src/assets/svgs/splotch_neutral.png";
   });
 
   // Save equipped brush to localStorage and dispatch event
@@ -346,7 +346,7 @@ const Shop = () => {
       ) : (
         <div className="flex">
           <section className="bg-skrawl-purple flex flex-col items-center justify-around h-full">
-            <img src="/src/assets/images/pint2.png" alt="Shop side art" className="border-r-8 object-cover h-200" />
+            <img src="/src/assets/svgs/splotch_neutral.png" alt="Shop side art" className="border-r-8 object-cover h-200" />
             <div className="bg-skrawl-white text-skrawl-purple font-header text-header px-6 py-4 rounded-lg shadow-lg border-4 border-skrawl-purple">
               Welcome to the Shop!
             </div>

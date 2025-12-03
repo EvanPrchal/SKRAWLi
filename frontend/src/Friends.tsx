@@ -16,7 +16,7 @@ type FriendRequest = { id: number; requester_id: number; receiver_id: number; st
 
 const Friends = () => {
   const api = useApi();
-  const { isAuthenticated, isLoading, user } = useAuth0();
+  const { isAuthenticated, isLoading } = useAuth0();
   const [friends, setFriends] = useState<UserSummary[]>([]);
   const [inbound, setInbound] = useState<FriendRequest[]>([]);
   const [outbound, setOutbound] = useState<FriendRequest[]>([]);

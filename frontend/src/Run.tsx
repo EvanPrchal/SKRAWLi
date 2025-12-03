@@ -58,6 +58,27 @@ const Run = () => {
   const notificationTimeoutRef = useRef<number | null>(null);
   const [difficultyLevel, setDifficultyLevel] = useState<string>(() => readDifficultyLevel());
   const [freezeTimer, setFreezeTimer] = useState<boolean>(false);
+  const [avatarMood, setAvatarMood] = useState<"neutral" | "happy" | "sad">("neutral");
+  const avatarMoodTimeoutRef = useRef<number | null>(null);
+
+  const resetAvatarMood = useCallback(() => {
+    if (avatarMoodTimeoutRef.current !== null) {
+      window.clearTimeout(avatarMoodTimeoutRef.current);
+      avatarMoodTimeoutRef.current = null;
+    }
+    setAvatarMood("neutral");
+  }, []);
+
+  const flashAvatarMood = useCallback((mood: "happy" | "sad") => {
+    if (avatarMoodTimeoutRef.current !== null) {
+      window.clearTimeout(avatarMoodTimeoutRef.current);
+    }
+    setAvatarMood(mood);
+    avatarMoodTimeoutRef.current = window.setTimeout(() => {
+      setAvatarMood("neutral");
+      avatarMoodTimeoutRef.current = null;
+    }, 1200);
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -125,6 +146,7 @@ const Run = () => {
 
   const handleComplete = (success: boolean, reward: number) => {
     if (success) {
+      flashAvatarMood("happy");
       // Apply difficulty multiplier to reward
       const multiplier = multiplierForDifficulty(difficultyLevel);
       const adjustedReward = Math.round(reward * multiplier);
@@ -170,6 +192,7 @@ const Run = () => {
         }, 1000);
       }
     } else {
+      flashAvatarMood("sad");
       streakRef.current = 0;
       setLives((l) => {
         const nextLives = l - 1;
@@ -205,6 +228,7 @@ const Run = () => {
     completedCountRef.current = 0;
     streakRef.current = 0;
     setMinigamesCompleted(0);
+    resetAvatarMood();
     if (notificationTimeoutRef.current !== null) {
       window.clearTimeout(notificationTimeoutRef.current);
       notificationTimeoutRef.current = null;
@@ -222,6 +246,9 @@ const Run = () => {
       if (notificationTimeoutRef.current !== null) {
         window.clearTimeout(notificationTimeoutRef.current);
       }
+      if (avatarMoodTimeoutRef.current !== null) {
+        window.clearTimeout(avatarMoodTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -232,9 +259,9 @@ const Run = () => {
     <GameplayLayout
       lives={lives}
       timeRemaining={timeRemaining}
-      userImage={user?.picture}
       userName={user?.name ?? (isGuest ? "Guest" : undefined)}
       notification={notification}
+      avatarMood={avatarMood}
     >
       {!started ? (
         <div className="flex flex-col h-full justify-center items-center gap-4">
