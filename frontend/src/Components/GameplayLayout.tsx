@@ -45,7 +45,7 @@ const GameplayLayout: React.FC<GameplayLayoutProps> = ({ lives, timeRemaining, u
     };
   }, []);
 
-  const ensureClickBuffer = async (): Promise<AudioBuffer | null> => {
+  const getAudioContext = async (): Promise<AudioContext | null> => {
     if (typeof window === "undefined") {
       return null;
     }
@@ -66,13 +66,22 @@ const GameplayLayout: React.FC<GameplayLayoutProps> = ({ lives, timeRemaining, u
       }
 
       if (ctx.state === "suspended") {
-        void ctx.resume();
+        await ctx.resume().catch(() => undefined);
       }
 
-      if (clickBufferRef.current) {
-        return clickBufferRef.current;
-      }
+      return ctx;
+    } catch (error) {
+      console.error("Unable to play avatar click sound", error);
+      return null;
+    }
+  };
 
+  const ensureClickBuffer = async (ctx: AudioContext): Promise<AudioBuffer | null> => {
+    if (clickBufferRef.current) {
+      return clickBufferRef.current;
+    }
+
+    try {
       const response = await fetch(clickSound);
       if (!response.ok) {
         throw new Error(`Failed to fetch avatar click sound: ${response.status}`);
@@ -82,15 +91,19 @@ const GameplayLayout: React.FC<GameplayLayoutProps> = ({ lives, timeRemaining, u
       clickBufferRef.current = decoded;
       return decoded;
     } catch (error) {
-      console.error("Unable to play avatar click sound", error);
+      console.error("Unable to load avatar click sound", error);
       return null;
     }
   };
 
-  const playAvatarClickSound = async () => {
-    const buffer = await ensureClickBuffer();
-    const ctx = audioCtxRef.current;
-    if (!buffer || !ctx) {
+  const playAvatarClickSample = async () => {
+    const ctx = await getAudioContext();
+    if (!ctx) {
+      return;
+    }
+
+    const buffer = await ensureClickBuffer(ctx);
+    if (!buffer) {
       return;
     }
 
@@ -103,6 +116,38 @@ const GameplayLayout: React.FC<GameplayLayoutProps> = ({ lives, timeRemaining, u
     });
   };
 
+  const playAvatarSynthSound = async () => {
+    const ctx = await getAudioContext();
+    if (!ctx) {
+      return;
+    }
+
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(520, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(280, ctx.currentTime + 0.18);
+
+      gain.gain.setValueAtTime(0.18, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start();
+      osc.stop(ctx.currentTime + 0.24);
+
+      osc.addEventListener("ended", () => {
+        osc.disconnect();
+        gain.disconnect();
+      });
+    } catch (error) {
+      console.error("Unable to play fallback avatar click sound", error);
+    }
+  };
+
   const handleAvatarClick = () => {
     if (clickTimeoutRef.current !== null) {
       window.clearTimeout(clickTimeoutRef.current);
@@ -111,7 +156,11 @@ const GameplayLayout: React.FC<GameplayLayoutProps> = ({ lives, timeRemaining, u
 
     const nextVariant = Math.random() < DOODLE_CHANCE ? "doodle" : "derp";
     setClickVariant(nextVariant);
-    void playAvatarClickSound();
+    if (nextVariant === "doodle") {
+      void playAvatarSynthSound();
+    } else {
+      void playAvatarClickSample();
+    }
 
     clickTimeoutRef.current = window.setTimeout(() => {
       setClickVariant(null);
