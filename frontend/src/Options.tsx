@@ -37,7 +37,7 @@ const Options = () => {
     localStorage.setItem("sfxVolume", sfxVolume.toString());
     localStorage.setItem("musicVolume", musicVolume.toString());
     // Broadcast settings update so other components can react
-    window.dispatchEvent(new CustomEvent("settingsUpdated", { detail: { difficultyLevel, showTimer } }));
+    window.dispatchEvent(new CustomEvent("settingsUpdated", { detail: { difficultyLevel, showTimer, sfxVolume, musicVolume } }));
     console.log("Settings saved:", {
       difficultyLevel,
       sfxVolume,

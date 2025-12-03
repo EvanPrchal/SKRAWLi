@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import clickSound from "../assets/sound/feddy.wav";
+import { useSfxVolume } from "../lib/sfxVolume";
 
 interface GameplayLayoutProps {
   lives: number;
@@ -29,6 +30,7 @@ const GameplayLayout: React.FC<GameplayLayoutProps> = ({ lives, timeRemaining, u
   const clickTimeoutRef = useRef<number | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const clickBufferRef = useRef<AudioBuffer | null>(null);
+  const sfxVolume = useSfxVolume();
 
   useEffect(() => {
     return () => {
@@ -97,6 +99,9 @@ const GameplayLayout: React.FC<GameplayLayoutProps> = ({ lives, timeRemaining, u
   };
 
   const playAvatarClickSample = async () => {
+    if (sfxVolume <= 0) {
+      return;
+    }
     const ctx = await getAudioContext();
     if (!ctx) {
       return;
@@ -109,14 +114,22 @@ const GameplayLayout: React.FC<GameplayLayoutProps> = ({ lives, timeRemaining, u
 
     const source = ctx.createBufferSource();
     source.buffer = buffer;
-    source.connect(ctx.destination);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(Math.min(1, sfxVolume), ctx.currentTime);
+
+    source.connect(gain);
+    gain.connect(ctx.destination);
     source.start();
     source.addEventListener("ended", () => {
       source.disconnect();
+      gain.disconnect();
     });
   };
 
   const playAvatarSynthSound = async () => {
+    if (sfxVolume <= 0) {
+      return;
+    }
     const ctx = await getAudioContext();
     if (!ctx) {
       return;
@@ -130,8 +143,15 @@ const GameplayLayout: React.FC<GameplayLayoutProps> = ({ lives, timeRemaining, u
       osc.frequency.setValueAtTime(520, ctx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(280, ctx.currentTime + 0.18);
 
-      gain.gain.setValueAtTime(0.18, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+      const startGain = 0.18 * sfxVolume;
+      if (startGain <= 0) {
+        osc.disconnect();
+        gain.disconnect();
+        return;
+      }
+      const endGain = Math.max(0.0001, 0.001 * sfxVolume);
+      gain.gain.setValueAtTime(startGain, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(endGain, ctx.currentTime + 0.22);
 
       osc.connect(gain);
       gain.connect(ctx.destination);
