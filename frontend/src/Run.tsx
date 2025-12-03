@@ -69,15 +69,18 @@ const Run = () => {
     setAvatarMood("neutral");
   }, []);
 
-  const flashAvatarMood = useCallback((mood: "happy" | "sad") => {
+  const flashAvatarMood = useCallback((mood: "happy" | "sad", persist: boolean = false) => {
     if (avatarMoodTimeoutRef.current !== null) {
       window.clearTimeout(avatarMoodTimeoutRef.current);
+      avatarMoodTimeoutRef.current = null;
     }
     setAvatarMood(mood);
-    avatarMoodTimeoutRef.current = window.setTimeout(() => {
-      setAvatarMood("neutral");
-      avatarMoodTimeoutRef.current = null;
-    }, 1200);
+    if (!persist) {
+      avatarMoodTimeoutRef.current = window.setTimeout(() => {
+        setAvatarMood("neutral");
+        avatarMoodTimeoutRef.current = null;
+      }, 1200);
+    }
   }, []);
 
   useEffect(() => {
@@ -192,14 +195,15 @@ const Run = () => {
         }, 1000);
       }
     } else {
-      flashAvatarMood("sad");
       streakRef.current = 0;
       setLives((l) => {
         const nextLives = l - 1;
         if (nextLives <= 0) {
+          flashAvatarMood("sad", true);
           setGameOver(true);
           return 0;
         }
+        flashAvatarMood("sad");
         if (notificationTimeoutRef.current !== null) {
           window.clearTimeout(notificationTimeoutRef.current);
         }
@@ -281,6 +285,7 @@ const Run = () => {
           <Minigames
             onComplete={handleComplete}
             onGameOver={() => {
+              flashAvatarMood("sad", true);
               setGameOver(true);
             }}
             onTimeUpdate={setTimeRemaining}

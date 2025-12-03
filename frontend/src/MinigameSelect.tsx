@@ -80,15 +80,18 @@ const MinigameSelect = () => {
     setAvatarMood("neutral");
   };
 
-  const flashAvatarMood = (mood: "happy" | "sad") => {
+  const flashAvatarMood = (mood: "happy" | "sad", persist: boolean = false) => {
     if (avatarMoodTimeoutRef.current !== null) {
       window.clearTimeout(avatarMoodTimeoutRef.current);
+      avatarMoodTimeoutRef.current = null;
     }
     setAvatarMood(mood);
-    avatarMoodTimeoutRef.current = window.setTimeout(() => {
-      setAvatarMood("neutral");
-      avatarMoodTimeoutRef.current = null;
-    }, 1200);
+    if (!persist) {
+      avatarMoodTimeoutRef.current = window.setTimeout(() => {
+        setAvatarMood("neutral");
+        avatarMoodTimeoutRef.current = null;
+      }, 1200);
+    }
   };
 
   const handleComplete = (success: boolean, reward: number) => {
@@ -118,13 +121,14 @@ const MinigameSelect = () => {
         }, 1000);
       }
     } else {
-      flashAvatarMood("sad");
       setLives((l) => {
         const nextLives = l - 1;
         if (nextLives <= 0) {
+          flashAvatarMood("sad", true);
           setGameOver(true);
           return 0;
         }
+        flashAvatarMood("sad");
         if (notificationTimeoutRef.current !== null) {
           window.clearTimeout(notificationTimeoutRef.current);
         }
@@ -233,6 +237,7 @@ const MinigameSelect = () => {
           <Minigames
             onComplete={handleComplete}
             onGameOver={() => {
+              flashAvatarMood("sad", true);
               setGameOver(true);
             }}
             onTimeUpdate={setTimeRemaining}
