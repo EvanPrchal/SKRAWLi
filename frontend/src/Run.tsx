@@ -295,9 +295,12 @@ const Run = () => {
           />
         </div>
       ) : (
-        <div className="game-over h-full flex flex-col items-center justify-center text-body font-body text-skrawl-purple gap-2">
+        <div className="game-over h-full flex flex-col items-center justify-center text-body font-body text-skrawl-purple gap-3">
           <h2 className="text-logotype font-logotype">Game Over!</h2>
-          <p>Coins earned: {coins}</p>
+          <div className="flex items-center gap-2">
+            <img src="./src/assets/svgs/coin.png" alt="Coins earned" className="h-8 w-8 object-contain" />
+            <span className="text-header font-header">{coins}</span>
+          </div>
           <p className="text-sm opacity-75">
             Difficulty: {difficultyLevel.charAt(0).toUpperCase() + difficultyLevel.slice(1)} ({multiplierForDifficulty(difficultyLevel)}x multiplier)
           </p>
