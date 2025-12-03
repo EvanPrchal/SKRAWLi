@@ -355,7 +355,7 @@ const Shop = () => {
           <section className="shop-area bg-skrawl-orange bg-[url('/src/assets/images/background.png')] bg-cover flex-1 flex flex-col gap-6 p-6">
             <header className="flex items-center justify-between">
               <h1 className="text-logotype font-logotype text-skrawl-white">Shop</h1>
-              <div className="text-header font-header text-skrawl-white flex items-center gap-2">
+              <div className="text-header font-header text-skrawl-black bg-skrawl-white rounded-2xl px-2 flex items-center gap-2">
                 <img src="/src/assets/svgs/coin.png" alt="Coins" className="h-8 w-8 object-contain" />
                 {coins === null ? <span className="text-accent-cyan/60">Loading...</span> : <span className="text-accent-cyan">{coins}</span>}
               </div>
