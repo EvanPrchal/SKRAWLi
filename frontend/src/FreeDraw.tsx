@@ -5,6 +5,7 @@ import { useApi } from "./lib/api";
 import Loading from "./Components/Loading";
 import { useDataReady } from "./lib/useDataReady";
 import { useAuth0 } from "@auth0/auth0-react";
+import { useCustomCursorSetting } from "./lib/customCursor";
 
 type BrushEffect = "normal" | "rainbow" | "pixel";
 
@@ -131,7 +132,10 @@ const FreeDraw = () => {
   const [profileBgStyle, setProfileBgStyle] = useState<Record<string, string>>({});
   const [profileBgLoaded, setProfileBgLoaded] = useState<boolean>(false);
   const drawingSurfaceRef = useRef<HTMLDivElement | null>(null);
-  const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
+  const customCursorEnabled = useCustomCursorSetting();
+  const pointerRef = useRef<HTMLDivElement | null>(null);
+  const pointerCoordRef = useRef<{ x: number; y: number } | null>(null);
+  const pointerRafRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -227,6 +231,88 @@ const FreeDraw = () => {
     }
   }, []);
 
+  const pointerSize = Math.max(4, size);
+
+  const hidePointer = useCallback(() => {
+    if (pointerRafRef.current !== null) {
+      window.cancelAnimationFrame(pointerRafRef.current);
+      pointerRafRef.current = null;
+    }
+    pointerCoordRef.current = null;
+    const pointer = pointerRef.current;
+    if (pointer) {
+      pointer.style.display = "none";
+      pointer.style.transform = "translate(-9999px, -9999px)";
+    }
+  }, []);
+
+  const schedulePointerSync = useCallback(() => {
+    if (pointerRafRef.current !== null) {
+      return;
+    }
+    pointerRafRef.current = window.requestAnimationFrame(() => {
+      pointerRafRef.current = null;
+      const pointer = pointerRef.current;
+      const coord = pointerCoordRef.current;
+      if (!pointer || !coord) {
+        return;
+      }
+      pointer.style.transform = `translate(${coord.x}px, ${coord.y}px)`;
+      pointer.style.display = "block";
+    });
+  }, []);
+
+  const updatePointerPosition = useCallback(
+    (event: React.PointerEvent) => {
+      if (!customCursorEnabled) {
+        return;
+      }
+      const surface = drawingSurfaceRef.current;
+      if (!surface) return;
+      const rect = surface.getBoundingClientRect();
+      pointerCoordRef.current = {
+        x: event.clientX - rect.left - pointerSize / 2,
+        y: event.clientY - rect.top - pointerSize / 2,
+      };
+      schedulePointerSync();
+    },
+    [customCursorEnabled, pointerSize, schedulePointerSync]
+  );
+
+  const handleSurfacePointerMove = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      updatePointerPosition(event);
+    },
+    [updatePointerPosition]
+  );
+
+  const handleSurfacePointerLeave = useCallback(() => {
+    hidePointer();
+  }, [hidePointer]);
+
+  useEffect(() => {
+    if (!customCursorEnabled) {
+      hidePointer();
+      return;
+    }
+    const pointer = pointerRef.current;
+    if (!pointer) {
+      return;
+    }
+    const effectiveColor = isEraser ? "#E81E65" : activeBrush === "rainbow" ? `hsl(${Math.floor((Date.now() / 30) % 360)}, 100%, 60%)` : color;
+
+    pointer.style.width = `${pointerSize}px`;
+    pointer.style.height = `${pointerSize}px`;
+    pointer.style.borderRadius = activeBrush === "pixel" ? "12%" : "9999px";
+    pointer.style.borderWidth = "2px";
+    pointer.style.borderStyle = "solid";
+    pointer.style.borderColor = effectiveColor;
+    pointer.style.boxShadow = isEraser ? "0 0 0 1px rgba(36,31,33,0.15)" : "none";
+    pointer.style.backgroundColor = isEraser ? "rgba(255,255,255,0.2)" : "transparent";
+  }, [activeBrush, color, customCursorEnabled, hidePointer, isEraser, pointerSize]);
+
+  useEffect(() => () => hidePointer(), [hidePointer]);
+
   useEffect(() => {
     const handleResize = () => {
       ensureCanvasSize();
@@ -240,13 +326,6 @@ const FreeDraw = () => {
   useEffect(() => {
     drawCanvas();
   }, [drawCanvas]);
-
-  const updateCursorIndicator = (e: React.PointerEvent) => {
-    const surface = drawingSurfaceRef.current;
-    if (!surface) return;
-    const rect = surface.getBoundingClientRect();
-    setCursorPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-  };
 
   const endCurrentStroke = useCallback(() => {
     const stroke = currentStrokeRef.current;
@@ -268,6 +347,7 @@ const FreeDraw = () => {
     e.preventDefault();
     e.stopPropagation();
     ensureCanvasSize();
+    updatePointerPosition(e);
     const { x, y } = getCanvasPosition(e);
     const strokeSize = size;
     const strokeColor = getEffectiveColor();
@@ -282,7 +362,6 @@ const FreeDraw = () => {
     appendPointToStroke(stroke, x, y);
     currentStrokeRef.current = stroke;
     isDrawingRef.current = true;
-    updateCursorIndicator(e);
     drawCanvas(stroke);
     (e.target as HTMLCanvasElement).setPointerCapture?.(e.pointerId);
   };
@@ -290,7 +369,7 @@ const FreeDraw = () => {
   const handleCanvasPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    updateCursorIndicator(e);
+    updatePointerPosition(e);
     if (!isDrawingRef.current) return;
     const stroke = currentStrokeRef.current;
     if (!stroke) return;
@@ -301,13 +380,11 @@ const FreeDraw = () => {
 
   const handleCanvasPointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!isDrawingRef.current) {
-      updateCursorIndicator(e);
       return;
     }
     e.preventDefault();
     e.stopPropagation();
     endCurrentStroke();
-    updateCursorIndicator(e);
     (e.target as HTMLCanvasElement).releasePointerCapture?.(e.pointerId);
   };
 
@@ -315,24 +392,14 @@ const FreeDraw = () => {
     if (isDrawingRef.current) {
       endCurrentStroke();
     }
-    setCursorPos(null);
+    hidePointer();
   };
 
   const handleCanvasPointerCancel = () => {
     if (isDrawingRef.current) {
       endCurrentStroke();
     }
-  };
-
-  const handleSurfacePointerMove = (e: React.PointerEvent) => {
-    updateCursorIndicator(e);
-  };
-
-  const handleSurfacePointerLeave = () => {
-    if (isDrawingRef.current) {
-      endCurrentStroke();
-    }
-    setCursorPos(null);
+    hidePointer();
   };
 
   const handleUndo = () => {
@@ -401,8 +468,6 @@ const FreeDraw = () => {
   const ready = useDataReady([ownedBrushesLoaded, profileBgLoaded]);
   if (!ready) return <Loading />;
 
-  const previewSize = Math.max(4, size);
-
   return (
     <div className={`min-h-screen ${containerBgClass} bg-[url('/src/assets/images/background.png')] bg-cover font-body`} style={profileBgStyle}>
       <NavigationHeader />
@@ -410,7 +475,9 @@ const FreeDraw = () => {
       <div className="mx-auto max-w-7xl p-4 h-[calc(100vh-80px)]">
         <div className="w-full h-full flex gap-4">
           <div
-            className="flex-1 bg-skrawl-white rounded-md border border-skrawl-purple/20 overflow-hidden flex relative font-body cursor-none"
+            className={`flex-1 bg-skrawl-white rounded-md border border-skrawl-purple/20 overflow-hidden flex relative font-body${
+              customCursorEnabled ? " cursor-none" : ""
+            }`}
             ref={drawingSurfaceRef}
             onPointerMove={handleSurfacePointerMove}
             onPointerLeave={handleSurfacePointerLeave}
@@ -422,29 +489,27 @@ const FreeDraw = () => {
               onPointerUp={handleCanvasPointerUp}
               onPointerLeave={handleCanvasPointerLeave}
               onPointerCancel={handleCanvasPointerCancel}
-              style={{ flex: 1, touchAction: "none", width: "100%", height: "100%", backgroundColor: "#ffffff" }}
+              style={{
+                flex: 1,
+                touchAction: "none",
+                width: "100%",
+                height: "100%",
+                backgroundColor: "#ffffff",
+                cursor: customCursorEnabled ? "none" : "crosshair",
+              }}
             />
+            {customCursorEnabled && (
+              <div
+                ref={pointerRef}
+                className="pointer-events-none absolute"
+                style={{ left: 0, top: 0, display: "none", transform: "translate(-9999px, -9999px)" }}
+              />
+            )}
             {activeBrush !== "normal" && !isEraser && (
               <div className="absolute top-2 left-2 bg-black/70 text-white px-3 py-1 rounded-full text-xs font-body">
                 {activeBrush === "rainbow" && "🌈 Rainbow"}
                 {activeBrush === "pixel" && "🟦 Pixel"}
               </div>
-            )}
-            {cursorPos && (
-              <div
-                className="pointer-events-none absolute border-2 cursor-none"
-                style={{
-                  left: cursorPos.x,
-                  top: cursorPos.y,
-                  width: `${previewSize}px`,
-                  height: `${previewSize}px`,
-                  borderRadius: activeBrush === "pixel" ? "12%" : "9999px",
-                  borderColor: isEraser ? "#E81E65" : getEffectiveColor(),
-                  transform: "translate(-50%, -50%)",
-                  boxShadow: isEraser ? "0 0 0 1px rgba(36,31,33,0.15)" : "none",
-                  backgroundColor: isEraser ? "rgba(255,255,255,0.2)" : "transparent",
-                }}
-              />
             )}
           </div>
 

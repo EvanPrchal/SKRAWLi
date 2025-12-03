@@ -29,20 +29,27 @@ const Options = () => {
       return Number.isNaN(parsed) ? 50 : parsed;
     })
   );
-  const [showTimer, setShowTimer] = useState(() => readFromStorage("showTimer", true, (v) => v === "true"));
+  const [showTimer, setShowTimer] = useState(() => readFromStorage("showTimer", false, (v) => v === "true"));
+  const [showCustomCursor, setShowCustomCursor] = useState(() => readFromStorage("showCustomCursor", false, (v) => v === "true"));
 
   const handleSaveSettings = () => {
     localStorage.setItem("showTimer", showTimer.toString());
     localStorage.setItem("difficultyLevel", difficultyLevel);
     localStorage.setItem("sfxVolume", sfxVolume.toString());
     localStorage.setItem("musicVolume", musicVolume.toString());
+    localStorage.setItem("showCustomCursor", showCustomCursor.toString());
     // Broadcast settings update so other components can react
-    window.dispatchEvent(new CustomEvent("settingsUpdated", { detail: { difficultyLevel, showTimer, sfxVolume, musicVolume } }));
+    window.dispatchEvent(
+      new CustomEvent("settingsUpdated", {
+        detail: { difficultyLevel, showTimer, sfxVolume, musicVolume, showCustomCursor },
+      })
+    );
     console.log("Settings saved:", {
       difficultyLevel,
       sfxVolume,
       musicVolume,
       showTimer,
+      showCustomCursor,
     });
     // Redirect to home page
     navigate("/");
@@ -117,6 +124,21 @@ const Options = () => {
                   <div
                     className={`w-4 h-4 rounded-full bg-white transform transition-transform duration-200 ease-in-out ${
                       showTimer ? "translate-x-7" : "translate-x-1"
+                    }`}
+                  />
+                </button>
+              </div>
+              <div className="flex items-center justify-between">
+                <label className="text-body font-body text-skrawl-purple">Custom Brush Cursor</label>
+                <button
+                  onClick={() => setShowCustomCursor(!showCustomCursor)}
+                  className={`w-12 h-6 rounded-full transition-colors duration-200 ease-in-out ${
+                    showCustomCursor ? "bg-skrawl-cyan" : "bg-gray-300"
+                  }`}
+                >
+                  <div
+                    className={`w-4 h-4 rounded-full bg-white transform transition-transform duration-200 ease-in-out ${
+                      showCustomCursor ? "translate-x-7" : "translate-x-1"
                     }`}
                   />
                 </button>
