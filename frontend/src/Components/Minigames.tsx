@@ -1,4 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
+import threeCountdownImg from "../assets/images/3_countdown.png";
+import twoCountdownImg from "../assets/images/2_countdown.png";
+import oneCountdownImg from "../assets/images/1_countdown.png";
+import goCountdownImg from "../assets/images/go_countdown.png";
 import type { Minigame } from "./types";
 import { getRandomMinigames } from "./minigamesData";
 import TraceCanvas from "./TraceCanvas";
@@ -14,6 +18,13 @@ interface MinigamesProps {
 }
 
 const MINIGAME_TIME = 10; // default seconds per minigame
+
+const countdownImageMap: Record<string, string> = {
+  "3": threeCountdownImg,
+  "2": twoCountdownImg,
+  "1": oneCountdownImg,
+  "SKRAWL!": goCountdownImg,
+};
 
 const Minigames: React.FC<MinigamesProps> = ({
   onComplete,
@@ -189,9 +200,21 @@ const Minigames: React.FC<MinigamesProps> = ({
   };
 
   if (countdownValue) {
+    const countdownImageSrc = countdownImageMap[countdownValue];
     return (
       <div className="w-full h-full flex items-center justify-center">
-        <div className="text-logotype font-logotype text-skrawl-purple animate-ping">{countdownValue}</div>
+        {countdownImageSrc ? (
+          <img
+            key={countdownValue}
+            src={countdownImageSrc}
+            alt={countdownValue === "SKRAWL!" ? "Go" : `Countdown ${countdownValue}`}
+            className="max-w-xs w-1/3 animate-ping [animation-duration:15s] "
+          />
+        ) : (
+          <div key={countdownValue} className="text-logotype font-logotype text-skrawl-purple">
+            {countdownValue}
+          </div>
+        )}
       </div>
     );
   }
