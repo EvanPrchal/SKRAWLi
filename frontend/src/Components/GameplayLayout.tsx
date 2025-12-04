@@ -193,10 +193,10 @@ const GameplayLayout: React.FC<GameplayLayoutProps> = ({ lives, timeRemaining, u
   const avatarLabel = clickVariant ?? currentMood;
   return (
     <div className="flex flex-col h-screen bg-skrawl-cyan bg-[url('/src/assets/images/background.png')] bg-cover items-center justify-center relative">
-      <section className="gameplay-ui w-4/6 bg-skrawl-white mb-2 rounded-t-lg text-skrawl-purple flex justify-around font-header text-header items-center">
-        <div className="lives-ui flex justify-center">
+      <section className="gameplay-ui w-4/6 bg-skrawl-white mb-2 rounded-t-lg text-skrawl-purple flex justify-around font-header text-body items-center">
+        <div className="lives-ui flex items-center justify-center gap-2 leading-none">
           <img src="./src/assets/svgs/lives.png" alt="Lives" className="w-1/6" />
-          <h1>x{lives}</h1>
+          <h1 className="translate-y-[8px]">x{lives}</h1>
         </div>
         <img
           src={avatarSrc}
@@ -205,8 +205,12 @@ const GameplayLayout: React.FC<GameplayLayoutProps> = ({ lives, timeRemaining, u
           onClick={handleAvatarClick}
         />
         <section className="timer-ui flex justify-center">
-          <span>{Math.max(timeRemaining, 0)}</span>
-          <img src="./src/assets/svgs/time.png" alt="Seconds" className="w-1/6" />
+          <div className="relative flex items-center justify-center w-1/6 leading-none">
+            <img src="./src/assets/svgs/time.png" alt="Seconds" className="w-full" />
+            <span className="pointer-events-none absolute inset-0 translate-y-[8px] flex items-center justify-center font-header text-body text-skrawl-purple leading-none">
+              {Math.max(timeRemaining, 0)}
+            </span>
+          </div>
         </section>
       </section>
       <div className="w-4/6 h-4/6 flex flex-col bg-skrawl-white rounded-b-lg relative overflow-hidden">
