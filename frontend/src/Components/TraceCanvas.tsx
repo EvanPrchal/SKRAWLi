@@ -1,9 +1,8 @@
 // src/TraceCanvas.tsx
-import React, { useRef, useEffect, useState, useCallback } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import type { Point, Shape, PolygonShape, CircleShape, EllipseShape } from "./types";
 import { canvasDimensions } from "./canvasContext";
 import MiniTimer from "./MiniTimer";
-import { useCustomCursorSetting } from "../lib/customCursor";
 
 interface TraceCanvasProps {
   shapes: Shape[];
@@ -30,10 +29,7 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
   const shapeCompletedRef = useRef<boolean>(false);
   const offsetRef = useRef<{ left: number; top: number }>({ left: 0, top: 0 });
   const [brushType, setBrushType] = useState<string>("smooth");
-  const customCursorEnabled = useCustomCursorSetting();
-  const pointerRef = useRef<HTMLDivElement | null>(null);
-  const pointerCoordRef = useRef<{ x: number; y: number } | null>(null);
-  const pointerRafRef = useRef<number | null>(null);
+  const [pointerPos, setPointerPos] = useState<{ x: number; y: number } | null>(null);
 
   const pointerSize = (() => {
     switch (brushType) {
@@ -50,71 +46,12 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
   const pointerBorderColor = pointerIsSquare ? "#241f21" : "rgba(36,31,33,0.85)";
   const pointerFillColor = pointerIsSquare ? "rgba(36,31,33,0.25)" : "rgba(255,255,255,0.12)";
 
-  const hidePointer = useCallback(() => {
-    if (pointerRafRef.current !== null) {
-      window.cancelAnimationFrame(pointerRafRef.current);
-      pointerRafRef.current = null;
-    }
-    pointerCoordRef.current = null;
-    const pointer = pointerRef.current;
-    if (pointer) {
-      pointer.style.display = "none";
-      pointer.style.transform = "translate(-9999px, -9999px)";
-    }
-  }, []);
-
-  const schedulePointerSync = useCallback(() => {
-    if (pointerRafRef.current !== null) {
-      return;
-    }
-    pointerRafRef.current = window.requestAnimationFrame(() => {
-      pointerRafRef.current = null;
-      const pointer = pointerRef.current;
-      const coord = pointerCoordRef.current;
-      if (!pointer || !coord) {
-        return;
-      }
-      pointer.style.transform = `translate(${coord.x}px, ${coord.y}px)`;
-      pointer.style.display = "block";
-    });
-  }, []);
-
-  const updatePointer = useCallback(
-    (event: React.PointerEvent<HTMLCanvasElement>) => {
-      if (!customCursorEnabled) {
-        return;
-      }
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      pointerCoordRef.current = {
-        x: event.clientX - rect.left - pointerSize / 2,
-        y: event.clientY - rect.top - pointerSize / 2,
-      };
-      schedulePointerSync();
-    },
-    [customCursorEnabled, pointerSize, schedulePointerSync]
-  );
-
-  useEffect(() => {
-    if (!customCursorEnabled) {
-      hidePointer();
-      return;
-    }
-    const pointer = pointerRef.current;
-    if (!pointer) {
-      return;
-    }
-    pointer.style.width = `${pointerSize}px`;
-    pointer.style.height = `${pointerSize}px`;
-    pointer.style.borderRadius = pointerIsSquare ? "15%" : "9999px";
-    pointer.style.border = "none";
-    pointer.style.outline = `1px solid ${pointerBorderColor}`;
-    pointer.style.backgroundColor = pointerFillColor;
-    pointer.style.boxShadow = "0 0 2px rgba(36,31,33,0.28)";
-  }, [customCursorEnabled, pointerBorderColor, pointerFillColor, pointerIsSquare, pointerSize, hidePointer]);
-
-  useEffect(() => () => hidePointer(), [hidePointer]);
+  const updatePointerIndicator = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    setPointerPos({ x: event.clientX - rect.left, y: event.clientY - rect.top });
+  };
 
   // Listen for brush changes from shop
   useEffect(() => {
@@ -175,15 +112,15 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
 
   const startDraw = (e: React.PointerEvent<HTMLCanvasElement>) => {
     updateCanvasSize();
+    updatePointerIndicator(e);
     const pt = getRelativePoint(e);
     userPointsRef.current = [pt];
     currentStrokeBrushRef.current = brushType; // capture brush at stroke start
     setIsDrawing(true);
-    updatePointer(e);
   };
 
   const draw = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    updatePointer(e);
+    updatePointerIndicator(e);
     if (!isDrawing) return;
     const pt = getRelativePoint(e);
     userPointsRef.current.push(pt);
@@ -384,7 +321,7 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
   }, [shapes, currentShapeIndex, guides]);
 
   return (
-    <div className={`relative w-full h-full${customCursorEnabled ? " cursor-none" : ""}`}>
+    <div className="relative w-full h-full cursor-none">
       <MiniTimer time={currentTime} show={showTimer} />
       <canvas
         ref={canvasRef}
@@ -393,21 +330,32 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
           height: "100%",
           touchAction: "none",
           display: "block",
-          cursor: customCursorEnabled ? "none" : "crosshair",
+          cursor: "none",
         }}
         onPointerDown={startDraw}
+        onPointerEnter={updatePointerIndicator}
         onPointerMove={draw}
         onPointerUp={endDraw}
         onPointerLeave={() => {
+          setPointerPos(null);
           endDraw();
-          hidePointer();
         }}
       />
-      {customCursorEnabled && (
+      {pointerPos && (
         <div
-          ref={pointerRef}
           className="pointer-events-none absolute"
-          style={{ left: 0, top: 0, display: "none", transform: "translate(-9999px, -9999px)" }}
+          style={{
+            left: pointerPos.x,
+            top: pointerPos.y,
+            width: `${pointerSize}px`,
+            height: `${pointerSize}px`,
+            transform: "translate(-50%, -50%)",
+            borderRadius: pointerIsSquare ? "15%" : "9999px",
+            border: "none",
+            outline: `1px solid ${pointerBorderColor}`,
+            backgroundColor: pointerFillColor,
+            boxShadow: "0 0 2px rgba(36,31,33,0.28)",
+          }}
         />
       )}
     </div>
