@@ -331,7 +331,7 @@ const Shop = () => {
   };
 
   return (
-    <div className="min-h-screen bg-skrawl-black bg-cover">
+    <div className="min-h-screen bg-skrawl-black bg-[url('/src/assets/images/background.png')] bg-cover flex flex-col">
       <NavigationHeader />
       {!isAuthenticated ? (
         <div className="flex items-center justify-center h-[calc(100vh-80px)]">
@@ -344,15 +344,15 @@ const Shop = () => {
           </div>
         </div>
       ) : (
-        <div className="flex">
-          <section className="bg-skrawl-purple flex flex-col items-center justify-around h-full">
-            <img src="/src/assets/svgs/splotch_neutral.png" alt="Shop side art" className="border-r-8 object-cover h-200" />
+        <div className="flex flex-1 min-h-[calc(100vh-80px)] w-full">
+          <section className="basis-1/3 bg-skrawl-purple text-skrawl-white flex-shrink-0 flex flex-col items-center justify-center py-10 self-stretch px-6">
+            <img src="/src/assets/svgs/splotch_neutral.png" alt="Shop side art" className="object-contain h-[500px]" />
             <div className="bg-skrawl-white text-skrawl-purple font-header text-header px-6 py-4 rounded-lg shadow-lg border-4 border-skrawl-purple">
               Welcome to the Shop!
             </div>
           </section>
 
-          <section className="shop-area bg-skrawl-orange bg-[url('/src/assets/images/background.png')] bg-cover flex-1 flex flex-col gap-6 p-6">
+          <section className="shop-area bg-skrawl-orange bg-[url('/src/assets/images/background.png')] bg-cover flex-[2] flex flex-col gap-6 p-6 self-stretch">
             <header className="flex items-center justify-between">
               <h1 className="text-logotype font-logotype text-skrawl-white">Shop</h1>
               <div className="text-header font-header text-skrawl-black bg-skrawl-white rounded-2xl px-2 flex items-center gap-2">
