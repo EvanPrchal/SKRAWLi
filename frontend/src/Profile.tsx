@@ -61,11 +61,11 @@ const Profile = () => {
   const backgroundClass = isHexColor ? "" : profileBackground;
 
   return (
-    <div className={`flex flex-col h-screen ${backgroundClass} bg-[url(/src/assets/images/background.png)] bg-cover`} style={backgroundStyle}>
+    <div className={`flex flex-col min-h-screen ${backgroundClass} bg-[url(/src/assets/images/background.png)] bg-cover`} style={backgroundStyle}>
       <NavigationHeader />
-      <div className="flex items-center justify-center flex-grow">
-        <div className="w-4/6 h-5/6 flex flex-col bg-skrawl-white overflow-hidden">
-          <Tab.Group as="div" className="flex flex-col h-full">
+      <div className="flex-1 flex justify-center items-center px-4 py-8">
+        <div className="w-full max-w-5xl flex flex-col bg-skrawl-white overflow-hidden shadow-lg rounded-lg">
+          <Tab.Group as="div" className="flex flex-col min-h-[60vh]">
             <Tab.List className="flex w-full justify-around text-header font-header bg-skrawl-black">
               {["Profile", "Badges", "Friends"].map((tab) => (
                 <Tab
@@ -80,14 +80,14 @@ const Profile = () => {
                 </Tab>
               ))}
             </Tab.List>
-            <Tab.Panels className="flex-grow flex overflow-y-auto">
-              <Tab.Panel className="h-full w-full flex items-center justify-center p-4 overflow-y-auto">
+            <Tab.Panels className="flex-1 flex flex-col gap-0">
+              <Tab.Panel className="w-full flex-1 flex items-center justify-center p-6">
                 <ProfileInfo profileBackground={profileBackground} onBackgroundChange={setProfileBackground} />
               </Tab.Panel>
-              <Tab.Panel className="h-full w-full flex items-center justify-center p-4 overflow-y-auto">
+              <Tab.Panel className="w-full flex-1 flex items-center justify-center p-6">
                 <OwnedBadges allBadges={allBadges} ownedCodes={ownedCodes} />
               </Tab.Panel>
-              <Tab.Panel className="h-full w-full flex items-start justify-center p-4 overflow-y-auto">
+              <Tab.Panel className="w-full flex items-start justify-center p-4">
                 <ProfileFriendsTab />
               </Tab.Panel>
             </Tab.Panels>
