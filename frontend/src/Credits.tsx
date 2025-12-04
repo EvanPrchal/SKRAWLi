@@ -13,7 +13,12 @@ const Credits = () => {
         </section>
         <section className="text-header font-header flex flex-col items-center">
           Lead Artist <hr className="w-full border-t-4 border-skrawl-white"></hr>
-          <h2 className="text-button font-body">Morgan Myers</h2>
+          <h2 className="text-button font-body">
+            <span className="group inline-flex items-center gap-2">
+              <span>Morgan Myers</span>
+              <span className="opacity-0 transition-opacity duration-200 group-hover:opacity-100">&lt;3</span>
+            </span>
+          </h2>
         </section>
         <section className="text-header font-header flex flex-col items-center">
           Doodle Background <hr className="w-full border-t-4 border-skrawl-white"></hr>
