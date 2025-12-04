@@ -208,7 +208,7 @@ const GameplayLayout: React.FC<GameplayLayoutProps> = ({ lives, timeRemaining, u
           <div className="relative flex items-center justify-center w-1/6 leading-none">
             <img src="./src/assets/svgs/time.png" alt="Seconds" className="w-full" />
             <span className="pointer-events-none absolute inset-0 translate-y-[8px] flex items-center justify-center font-header text-body text-skrawl-purple leading-none">
-              {Math.max(timeRemaining, 0)}
+              {Math.max(timeRemaining, 0).toFixed(2)}
             </span>
           </div>
         </section>

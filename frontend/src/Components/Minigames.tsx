@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import threeCountdownImg from "../assets/images/3_countdown.png";
 import twoCountdownImg from "../assets/images/2_countdown.png";
 import oneCountdownImg from "../assets/images/1_countdown.png";
@@ -50,6 +50,17 @@ const Minigames: React.FC<MinigamesProps> = ({
   const [pendingMinigame, setPendingMinigame] = useState<Minigame | null>(null);
   const [hasShownCountdown, setHasShownCountdown] = useState(skipCountdown);
   const [resetToken, setResetToken] = useState<number>(0);
+  const frameRef = useRef<number | null>(null);
+  const timerActiveRef = useRef<boolean>(timerActive);
+  const showTransitionRef = useRef<boolean>(showTransition);
+
+  useEffect(() => {
+    timerActiveRef.current = timerActive;
+  }, [timerActive]);
+
+  useEffect(() => {
+    showTransitionRef.current = showTransition;
+  }, [showTransition]);
 
   // Ensure external skip flag permanently suppresses the countdown (e.g. after notifications)
   useEffect(() => {
@@ -73,21 +84,54 @@ const Minigames: React.FC<MinigamesProps> = ({
     }
   }, [freezeTimer, showTransition, countdownValue, timerActive]);
 
-  // Timer effect
+  // Timer effect with high precision updates
   useEffect(() => {
-    if (!timerActive || showTransition) return;
+    if (!timerActive || showTransition) {
+      if (frameRef.current !== null) {
+        cancelAnimationFrame(frameRef.current);
+        frameRef.current = null;
+      }
+      return;
+    }
 
-    const timer = setInterval(() => {
-      setTimeLeft((t) => {
-        const newTime = t - 1;
-        if (newTime <= 0) {
+    let lastTime = performance.now();
+
+    const tick = (now: number) => {
+      const deltaSeconds = (now - lastTime) / 1000;
+      lastTime = now;
+
+      let shouldContinue = true;
+      setTimeLeft((prev) => {
+        if (!timerActiveRef.current || prev <= 0) {
+          shouldContinue = false;
           return 0;
         }
-        return newTime;
+        const next = prev - deltaSeconds;
+        if (next <= 0) {
+          shouldContinue = false;
+          return 0;
+        }
+        return next;
       });
-    }, 1000);
 
-    return () => clearInterval(timer);
+      if (shouldContinue && timerActiveRef.current && !showTransitionRef.current) {
+        frameRef.current = requestAnimationFrame(tick);
+      } else {
+        if (frameRef.current !== null) {
+          cancelAnimationFrame(frameRef.current);
+          frameRef.current = null;
+        }
+      }
+    };
+
+    frameRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      if (frameRef.current !== null) {
+        cancelAnimationFrame(frameRef.current);
+        frameRef.current = null;
+      }
+    };
   }, [timerActive, showTransition]);
 
   // Check for game over when time runs out
