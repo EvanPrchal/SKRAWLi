@@ -9,14 +9,14 @@ const Credits = () => {
       <div className="flex flex-col items-center justify-center flex-grow gap-8 py-8">
         <h1 className="text-logotype font-logotype">Credits</h1>
         <section className="text-header font-header flex flex-col items-center">
-          Lead Developer<hr className="w-full"></hr> <h2 className="text-button font-body">Evan Prchal</h2>
+          Lead Developer<hr className="w-full border-t-4 border-skrawl-white"></hr> <h2 className="text-button font-body">Evan Prchal</h2>
         </section>
         <section className="text-header font-header flex flex-col items-center">
-          Lead Artist <hr className="w-full"></hr>
+          Lead Artist <hr className="w-full border-t-4 border-skrawl-white"></hr>
           <h2 className="text-button font-body">Morgan Myers</h2>
         </section>
         <section className="text-header font-header flex flex-col items-center">
-          Doodle Background <hr className="w-full"></hr>
+          Doodle Background <hr className="w-full border-t-4 border-skrawl-white"></hr>
           <a
             className="text-button font-body hover:text-skrawl-purple transition-colors"
             href="https://www.instagram.com/superwerehog_990/"
@@ -24,16 +24,13 @@ const Credits = () => {
           >
             superwerehog_990
           </a>
-          <a className="text-button font-body hover:text-skrawl-purple transition-colors" href="https://kmariscal5132.wixstudio.com/" target="_blank">
-            portfolio
-          </a>
         </section>
         <section className="text-header font-header flex flex-col items-center">
-          Main Color Scheme <hr className="w-full"></hr>
+          Main Color Scheme <hr className="w-full border-t-4 border-skrawl-white"></hr>
           <h2 className="text-button font-body">Valeria Gonzalez Ramos</h2>
         </section>
         <section className="text-header font-header flex flex-col items-center">
-          Inspirations <hr className="w-full"></hr>
+          Inspirations <hr className="w-full border-t-4 border-skrawl-white"></hr>
           <h2 className="text-button font-body">Warioware</h2>
           <a className="text-button font-body hover:text-skrawl-purple transition-colors" href="https://drawabox.com/" target="_blank">
             Drawabox
