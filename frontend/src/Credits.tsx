@@ -14,9 +14,9 @@ const Credits = () => {
         <section className="text-header font-header flex flex-col items-center">
           Lead Artist <hr className="w-full border-t-4 border-skrawl-white"></hr>
           <h2 className="text-button font-body">
-            <span className="group inline-flex items-center gap-2">
+            <span className="group relative inline-flex items-center justify-center">
               <span>Morgan Myers</span>
-              <span className="opacity-0 transition-opacity duration-200 group-hover:opacity-100">&lt;3</span>
+              <span className="absolute left-full ml-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">&lt;3</span>
             </span>
           </h2>
         </section>
