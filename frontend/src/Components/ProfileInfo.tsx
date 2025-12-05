@@ -155,9 +155,13 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profileBackground, onBackgrou
     <div className="text-center flex justify-around w-full gap-8">
       <section className="flex flex-col justify-center items-center space-y-4">
         {pictureUrl ? (
-          <img className="border-dotted border-3 p-3" src={pictureUrl} alt={displayName || user?.name || "Profile"} />
+          <img
+            className="w-28 h-28 rounded-full border border-skrawl-purple/40 object-cover"
+            src={pictureUrl}
+            alt={displayName || user?.name || "Profile"}
+          />
         ) : (
-          <div className="border-dotted border-3 p-3 w-28 h-28 rounded-full flex items-center justify-center bg-skrawl-purple/10 text-skrawl-purple text-3xl font-header">
+          <div className="w-28 h-28 rounded-full bg-skrawl-purple/20 border border-skrawl-purple/40 flex items-center justify-center text-skrawl-purple text-3xl font-header">
             {(displayName || user?.name || "U").charAt(0).toUpperCase()}
           </div>
         )}
