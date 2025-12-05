@@ -14,6 +14,38 @@ interface TraceCanvasProps {
   resetToken?: number;
 }
 
+const SMOOTH_SEGMENTS_PER_CURVE = 10; // Number of Catmull–Rom samples inserted per segment
+
+const clonePoint = (pt: Point): Point => ({ x: pt.x, y: pt.y });
+
+const sampleCatmullRom = (p0: Point, p1: Point, p2: Point, p3: Point, t: number) => {
+  const t2 = t * t;
+  const t3 = t2 * t;
+  const x = 0.5 * (2 * p1.x + (-p0.x + p2.x) * t + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3);
+  const y = 0.5 * (2 * p1.y + (-p0.y + p2.y) * t + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3);
+  return { x, y };
+};
+
+const generateSmoothPoints = (points: Point[], segmentsPerCurve = SMOOTH_SEGMENTS_PER_CURVE) => {
+  if (points.length < 2) return points.map(clonePoint);
+
+  const smooth: Point[] = [clonePoint(points[0])];
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i - 1] ?? points[i];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[i + 2] ?? p2;
+
+    for (let step = 1; step <= segmentsPerCurve; step++) {
+      const t = step / segmentsPerCurve;
+      const { x, y } = sampleCatmullRom(p0, p1, p2, p3, t);
+      smooth.push({ x, y });
+    }
+  }
+
+  return smooth;
+};
+
 const createSmoothPath = (ctx: CanvasRenderingContext2D, points: Point[]) => {
   if (points.length < 2) {
     return;
@@ -250,14 +282,16 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
     // Helper to render a stroke
     const renderStroke = (pts: Point[], brush: string) => {
       if (!pts.length) return;
+      const shouldSmooth = brush !== "pixel" && pts.length >= 3;
+      const points = shouldSmooth ? generateSmoothPoints(pts) : pts;
       if (brush === "pixel") {
         ctx.fillStyle = "#241f21";
         const pixelSize = 8;
-        for (let i = 0; i < pts.length; i++) {
-          const pt = pts[i];
+        for (let i = 0; i < points.length; i++) {
+          const pt = points[i];
           ctx.fillRect(pt.x - pixelSize / 2, pt.y - pixelSize / 2, pixelSize, pixelSize);
           if (i > 0) {
-            const prev = pts[i - 1];
+            const prev = points[i - 1];
             const dx = pt.x - prev.x;
             const dy = pt.y - prev.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
@@ -274,10 +308,12 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
         ctx.lineWidth = 6;
-        for (let i = 1; i < pts.length; i++) {
-          const prev = pts[i - 1];
-          const pt = pts[i];
-          const hue = (i * 12) % 360;
+        const smoothingFactor = shouldSmooth ? SMOOTH_SEGMENTS_PER_CURVE : 1;
+        for (let i = 1; i < points.length; i++) {
+          const prev = points[i - 1];
+          const pt = points[i];
+          const baseIndex = Math.min(pts.length - 1, Math.floor(i / smoothingFactor));
+          const hue = (baseIndex * 12) % 360;
           ctx.strokeStyle = `hsl(${hue}, 100%, 50%)`;
           ctx.beginPath();
           ctx.moveTo(prev.x, prev.y);
@@ -289,7 +325,7 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
         ctx.lineJoin = "round";
         ctx.lineWidth = 5;
         ctx.strokeStyle = "#241f21";
-        createSmoothPath(ctx, pts);
+        createSmoothPath(ctx, points);
         ctx.stroke();
       }
     };
