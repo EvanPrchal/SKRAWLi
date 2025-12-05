@@ -22,24 +22,24 @@ type CatalogItem = {
 const CATALOG: CatalogItem[] = [
   // Brushes
   {
-    id: "smooth-brush",
-    name: "Smooth Brush",
-    description: "Default smooth drawing brush.",
+    id: "default-brush",
+    name: "Brush",
+    description: "The default brush",
     price: 0,
     category: "Brushes",
   },
   {
     id: "pixel-brush",
     name: "Pixel Brush",
-    description: "Draw with a retro pixelated brush for blocky, digital art.",
-    price: 120,
+    description: "A brush that instead draws pixel blocks",
+    price: 100,
     category: "Brushes",
     preview: "pixel",
   },
   {
     id: "rainbow-brush",
     name: "Rainbow Brush",
-    description: "Paint with all the colors of the rainbow in a single stroke.",
+    description: "A rainbow brush for all your multicolored needs",
     price: 200,
     category: "Brushes",
     preview: "rainbow",
@@ -47,9 +47,9 @@ const CATALOG: CatalogItem[] = [
 
   // Characters
   {
-    id: "classic-pint",
-    name: "Classic Pint",
-    description: "The default SKRAWLi companion, ready to skrawl!",
+    id: "splotch",
+    name: "Splotch",
+    description: "The default skrawli avatar (he's just a little guy)",
     price: 0,
     category: "Characters",
     previewImage: "/src/assets/svgs/splotch_neutral.png",
@@ -59,7 +59,7 @@ const CATALOG: CatalogItem[] = [
   {
     id: "default-theme",
     name: "Default Theme",
-    description: "Base SKRAWLi theme (always available).",
+    description: "Default skrawli theme",
     price: 0,
     category: "Themes",
     colors: ["#1C0667", "#E81E65", "#FF9F1C", "#2EC4B6", "#241f21"],
@@ -67,7 +67,7 @@ const CATALOG: CatalogItem[] = [
   {
     id: "coffee-theme",
     name: "Coffee Theme",
-    description: "Warm brown and cream tones for a cozy vibe.",
+    description: "A cozy coffee inspired theme",
     price: 250,
     category: "Themes",
     colors: ["#7f5539", "#ddb892", "#e6ccb2", "#b08968", "#ede0d4"],
@@ -75,7 +75,7 @@ const CATALOG: CatalogItem[] = [
   {
     id: "cotton-candy-theme",
     name: "Cotton Candy Theme",
-    description: "Soft pastel colors for a sweet look.",
+    description: "A soft cotton candy colored pastel theme",
     price: 250,
     category: "Themes",
     colors: ["#8093f1", "#72ddf7", "#f7aef8", "#b388eb", "#f4f4ed"],
@@ -83,7 +83,7 @@ const CATALOG: CatalogItem[] = [
   {
     id: "rose-theme",
     name: "Rose Theme",
-    description: "Romantic pink and red tones for an elegant look.",
+    description: "A beautiful red theme for a more refined appearance",
     price: 250,
     category: "Themes",
     colors: ["#880d1e", "#dd2d4a", "#f26a8d", "#f49cbb", "#cbeef3"],
@@ -93,7 +93,7 @@ const CATALOG: CatalogItem[] = [
   {
     id: "color-picker",
     name: "Color Picker",
-    description: "Unlock full color wheel for profile backgrounds.",
+    description: "Unlocks full color customization for the profile background",
     price: 300,
     category: "Misc",
   },
