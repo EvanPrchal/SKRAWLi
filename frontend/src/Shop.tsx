@@ -39,7 +39,7 @@ const CATALOG: CatalogItem[] = [
   {
     id: "rainbow-brush",
     name: "Rainbow Brush",
-    description: "A rainbow brush for all your multicolored needs",
+    description: "Fruity :)",
     price: 200,
     category: "Brushes",
     preview: "rainbow",
@@ -75,7 +75,7 @@ const CATALOG: CatalogItem[] = [
   {
     id: "cotton-candy-theme",
     name: "Cotton Candy Theme",
-    description: "A soft cotton candy colored pastel theme",
+    description: "For cotton candy lovers",
     price: 250,
     category: "Themes",
     colors: ["#8093f1", "#72ddf7", "#f7aef8", "#b388eb", "#f4f4ed"],
@@ -83,7 +83,7 @@ const CATALOG: CatalogItem[] = [
   {
     id: "rose-theme",
     name: "Rose Theme",
-    description: "A beautiful red theme for a more refined appearance",
+    description: "For those with a more refined taste",
     price: 250,
     category: "Themes",
     colors: ["#880d1e", "#dd2d4a", "#f26a8d", "#f49cbb", "#cbeef3"],
@@ -225,7 +225,12 @@ const Shop = () => {
   });
   const [equippedCharacter, setEquippedCharacter] = useState<string>(() => {
     if (typeof window === "undefined") return "/src/assets/svgs/splotch_neutral.png";
-    return localStorage.getItem("equippedCharacter") || "/src/assets/svgs/splotch_neutral.png";
+    const saved = localStorage.getItem("equippedCharacter");
+    if (!saved) {
+      localStorage.setItem("equippedCharacter", "/src/assets/svgs/splotch_neutral.png");
+      return "/src/assets/svgs/splotch_neutral.png";
+    }
+    return saved;
   });
 
   // Save equipped brush to localStorage and dispatch event
@@ -276,7 +281,7 @@ const Shop = () => {
   }, [isLoading, isAuthenticated]);
 
   const items = useMemo(() => CATALOG.filter((i) => i.category === activeTab), [activeTab]);
-  const isOwned = (id: string) => id === "smooth-brush" || id === "default-theme" || id === "classic-pint" || owned.includes(id);
+  const isOwned = (id: string) => id === "smooth-brush" || id === "default-theme" || id === "classic-pint" || id === "splotch" || owned.includes(id);
   const canAfford = (price: number) => (coins ?? 0) >= price;
 
   const ready = useDataReady([
@@ -428,7 +433,8 @@ const Shop = () => {
                         )}
                       </td>
                       <td className="px-4 py-3 font-body">
-                        {item.price === 0 && (item.id === "smooth-brush" || item.id === "default-theme" || item.id === "classic-pint")
+                        {item.price === 0 &&
+                        (item.id === "smooth-brush" || item.id === "default-theme" || item.id === "classic-pint" || item.id === "splotch")
                           ? "-"
                           : `${item.price} coins`}
                       </td>
