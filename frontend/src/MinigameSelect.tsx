@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import Loading from "./Components/Loading";
 import Minigames from "./Components/Minigames";
@@ -6,6 +6,9 @@ import GameplayLayout from "./Components/GameplayLayout";
 import { getRandomMinigames } from "./Components/minigamesData";
 import type { Minigame } from "./Components/types";
 import { Link } from "react-router-dom";
+import { useSfxVolume } from "./lib/sfxVolume";
+import yaySound from "./assets/sound/yay.wav";
+import lossSound from "./assets/sound/loss.wav";
 
 const timeForDifficulty = (level: string): number => {
   switch (level) {
@@ -69,6 +72,7 @@ const MinigameSelect = () => {
   const [freezeTimer, setFreezeTimer] = useState<boolean>(false);
   const [avatarMood, setAvatarMood] = useState<"neutral" | "happy" | "sad">("neutral");
   const avatarMoodTimeoutRef = useRef<number | null>(null);
+  const sfxVolume = useSfxVolume();
 
   const minigameOptions = getMinigameOptions();
 
@@ -94,8 +98,33 @@ const MinigameSelect = () => {
     }
   };
 
+  const playSample = useCallback(
+    (src: string) => {
+      if (sfxVolume <= 0) {
+        return;
+      }
+      try {
+        const audio = new Audio(src);
+        audio.volume = Math.min(1, Math.max(0, sfxVolume));
+        void audio.play().catch(() => undefined);
+      } catch (error) {
+        console.error(`Failed to play sound: ${src}`, error);
+      }
+    },
+    [sfxVolume]
+  );
+
+  const playWinSound = useCallback(() => {
+    playSample(yaySound);
+  }, [playSample]);
+
+  const playLoseLifeSound = useCallback(() => {
+    playSample(lossSound);
+  }, [playSample]);
+
   const handleComplete = (success: boolean, reward: number) => {
     if (success) {
+      playWinSound();
       flashAvatarMood("happy");
       // Apply difficulty multiplier to reward
       const multiplier = multiplierForDifficulty(difficultyLevel);
@@ -121,6 +150,7 @@ const MinigameSelect = () => {
         }, 1000);
       }
     } else {
+      playLoseLifeSound();
       setLives((l) => {
         const nextLives = l - 1;
         if (nextLives <= 0) {
@@ -237,6 +267,7 @@ const MinigameSelect = () => {
           <Minigames
             onComplete={handleComplete}
             onGameOver={() => {
+              playLoseLifeSound();
               flashAvatarMood("sad", true);
               setGameOver(true);
             }}

@@ -6,6 +6,8 @@ import goCountdownImg from "../assets/images/go_countdown.png";
 import type { Minigame } from "./types";
 import { getRandomMinigames } from "./minigamesData";
 import TraceCanvas from "./TraceCanvas";
+import countdownSound from "../assets/sound/countdown.wav";
+import { useSfxVolume } from "../lib/sfxVolume";
 
 interface MinigamesProps {
   onComplete: (success: boolean, reward: number) => void;
@@ -35,6 +37,7 @@ const Minigames: React.FC<MinigamesProps> = ({
   skipCountdown = false,
   freezeTimer = false,
 }) => {
+  const sfxVolume = useSfxVolume();
   // Function to get a random minigame
   const getRandomMinigame = useCallback(() => {
     const randomMinigames = getRandomMinigames();
@@ -61,6 +64,19 @@ const Minigames: React.FC<MinigamesProps> = ({
   useEffect(() => {
     showTransitionRef.current = showTransition;
   }, [showTransition]);
+
+  const playCountdownSound = useCallback(() => {
+    if (sfxVolume <= 0) {
+      return;
+    }
+    try {
+      const audio = new Audio(countdownSound);
+      audio.volume = Math.min(1, Math.max(0, sfxVolume));
+      void audio.play().catch(() => undefined);
+    } catch (error) {
+      console.error("Failed to play countdown sound", error);
+    }
+  }, [sfxVolume]);
 
   // Ensure external skip flag permanently suppresses the countdown (e.g. after notifications)
   useEffect(() => {
@@ -158,12 +174,16 @@ const Minigames: React.FC<MinigamesProps> = ({
   useEffect(() => {
     const startCountdown = () => {
       setCountdownValue("3");
+      playCountdownSound();
       setTimeout(() => {
         setCountdownValue("2");
+        playCountdownSound();
         setTimeout(() => {
           setCountdownValue("1");
+          playCountdownSound();
           setTimeout(() => {
             setCountdownValue("SKRAWL!");
+            playCountdownSound();
             setTimeout(() => {
               setCountdownValue("");
               setTimerActive(true);
@@ -178,7 +198,7 @@ const Minigames: React.FC<MinigamesProps> = ({
     if (!hasShownCountdown && !timerActive && !showTransition) {
       startCountdown();
     }
-  }, [hasShownCountdown, timerActive, showTransition]);
+  }, [hasShownCountdown, timerActive, showTransition, playCountdownSound]);
 
   // Transition effect
   useEffect(() => {
