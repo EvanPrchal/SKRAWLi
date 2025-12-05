@@ -240,7 +240,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profileBackground, onBackgrou
           <div className="flex flex-col gap-3 items-center">
             <h2 className="text-header font-body text-skrawl-purple">{displayName || user?.name || "Username"}</h2>
             <h2 className="text-body font-body text-skrawl-black max-w-md">{bio || "No bio yet."}</h2>
-            <button onClick={handleEdit} className="px-4 py-2 bg-skrawl-cyan text-white rounded hover:bg-skrawl-purple transition-colors">
+            <button onClick={handleEdit} className="px-4 py-2 bg-skrawl-purple text-white rounded hover:bg-skrawl-magenta transition-colors">
               Edit Profile
             </button>
           </div>
