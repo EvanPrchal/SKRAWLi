@@ -62,7 +62,7 @@ const CATALOG: CatalogItem[] = [
     description: "Default skrawli theme",
     price: 0,
     category: "Themes",
-    colors: ["#1C0667", "#E81E65", "#FF9F1C", "#2EC4B6", "#241f21"],
+    colors: ["#1C0667", "#E81E65", "#FF9F1C", "#2EC4B6", "#F2F0EF"],
   },
   {
     id: "coffee-theme",
@@ -70,7 +70,7 @@ const CATALOG: CatalogItem[] = [
     description: "A cozy coffee inspired theme",
     price: 250,
     category: "Themes",
-    colors: ["#7f5539", "#ddb892", "#e6ccb2", "#b08968", "#ede0d4"],
+    colors: ["#7f5539", "#b08968", "#ddb892", "#e6ccb2", "#ede0d4"],
   },
   {
     id: "pastel-theme",
@@ -78,7 +78,7 @@ const CATALOG: CatalogItem[] = [
     description: "Pastel theme for all the dreamers",
     price: 250,
     category: "Themes",
-    colors: ["#9c89b8", "#f0a6ca", "#efc3e6", "#f0e6ef", "#b8bedd"],
+    colors: ["#9c89b8", "#b8bedd", "#f0a6ca", "#efc3e6", "#f0e6ef"],
   },
   {
     id: "rose-theme",

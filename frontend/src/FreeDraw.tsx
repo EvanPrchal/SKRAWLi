@@ -199,14 +199,6 @@ const FreeDraw = () => {
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const redoStackRef = useRef<Stroke[]>([]);
   const currentStrokeRef = useRef<Stroke | null>(null);
-  const normalizeProfileBackground = (value?: string | null) => {
-    if (!value) return "bg-skrawl-purple";
-    return value === "bg-skrawl-black" ? "bg-skrawl-purple" : value;
-  };
-
-  const [profileBackground, setProfileBackground] = useState<string>("bg-skrawl-purple");
-  const [profileBgStyle, setProfileBgStyle] = useState<Record<string, string>>({});
-  const [profileBgLoaded, setProfileBgLoaded] = useState<boolean>(false);
   const drawingSurfaceRef = useRef<HTMLDivElement | null>(null);
   const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
 
@@ -226,31 +218,6 @@ const FreeDraw = () => {
       .catch((err) => {
         console.error("Failed to load owned brushes:", err);
         setOwnedBrushesLoaded(true);
-      });
-  }, [isAuthenticated, api]);
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setProfileBackground("bg-skrawl-purple");
-      setProfileBgStyle({});
-      setProfileBgLoaded(true);
-      return;
-    }
-    api
-      .getProfileBackground()
-      .then((data) => {
-        const bg = normalizeProfileBackground(data.profile_background);
-        setProfileBackground(bg);
-        if (bg.startsWith("#")) {
-          setProfileBgStyle({ backgroundColor: bg });
-        } else {
-          setProfileBgStyle({});
-        }
-        setProfileBgLoaded(true);
-      })
-      .catch((err) => {
-        console.error("Failed to load profile background for FreeDraw:", err);
-        setProfileBgLoaded(true);
       });
   }, [isAuthenticated, api]);
 
@@ -474,14 +441,14 @@ const FreeDraw = () => {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const containerBgClass = profileBackground.startsWith("#") ? "" : profileBackground;
-  const ready = useDataReady([ownedBrushesLoaded, profileBgLoaded]);
+  const containerBgClass = "bg-skrawl-magenta";
+  const ready = useDataReady([ownedBrushesLoaded]);
   if (!ready) return <Loading />;
 
   const previewSize = Math.max(4, size);
 
   return (
-    <div className={`min-h-screen ${containerBgClass} bg-[url('/src/assets/images/background.png')] bg-cover font-body`} style={profileBgStyle}>
+    <div className={`min-h-screen ${containerBgClass} bg-[url('/src/assets/images/background.png')] bg-cover font-body`}>
       <NavigationHeader />
 
       <div className="mx-auto max-w-7xl p-4 h-[calc(100vh-80px)]">
