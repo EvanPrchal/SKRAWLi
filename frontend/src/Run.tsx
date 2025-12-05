@@ -7,8 +7,8 @@ import GameplayLayout from "./Components/GameplayLayout";
 import { Link } from "react-router-dom";
 import { useApi } from "./lib/api";
 import { useSfxVolume } from "./lib/sfxVolume";
+import { playDoodleSound } from "./lib/doodleSound";
 import yaySound from "./assets/sound/yay.wav";
-import lossSound from "./assets/sound/loss.wav";
 
 const timeForDifficulty = (level: string): number => {
   switch (level) {
@@ -107,9 +107,9 @@ const Run = () => {
     playSample(yaySound);
   }, [playSample]);
 
-  const playLoseLifeSound = useCallback(() => {
-    playSample(lossSound);
-  }, [playSample]);
+  const playLoseLifeSound = useCallback(async () => {
+    await playDoodleSound(Math.min(1, Math.max(0, sfxVolume)));
+  }, [sfxVolume]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -315,7 +315,7 @@ const Run = () => {
           <Minigames
             onComplete={handleComplete}
             onGameOver={() => {
-              playLoseLifeSound();
+              void playLoseLifeSound();
               flashAvatarMood("sad", true);
               setGameOver(true);
             }}

@@ -7,8 +7,8 @@ import { getRandomMinigames } from "./Components/minigamesData";
 import type { Minigame } from "./Components/types";
 import { Link } from "react-router-dom";
 import { useSfxVolume } from "./lib/sfxVolume";
+import { playDoodleSound } from "./lib/doodleSound";
 import yaySound from "./assets/sound/yay.wav";
-import lossSound from "./assets/sound/loss.wav";
 
 const timeForDifficulty = (level: string): number => {
   switch (level) {
@@ -118,9 +118,9 @@ const MinigameSelect = () => {
     playSample(yaySound);
   }, [playSample]);
 
-  const playLoseLifeSound = useCallback(() => {
-    playSample(lossSound);
-  }, [playSample]);
+  const playLoseLifeSound = useCallback(async () => {
+    await playDoodleSound(Math.min(1, Math.max(0, sfxVolume)));
+  }, [sfxVolume]);
 
   const handleComplete = (success: boolean, reward: number) => {
     if (success) {
@@ -150,7 +150,7 @@ const MinigameSelect = () => {
         }, 1000);
       }
     } else {
-      playLoseLifeSound();
+      void playLoseLifeSound();
       setLives((l) => {
         const nextLives = l - 1;
         if (nextLives <= 0) {
@@ -267,7 +267,7 @@ const MinigameSelect = () => {
           <Minigames
             onComplete={handleComplete}
             onGameOver={() => {
-              playLoseLifeSound();
+              void playLoseLifeSound();
               flashAvatarMood("sad", true);
               setGameOver(true);
             }}
