@@ -28,7 +28,7 @@ const Profiles = () => {
   if (isLoading) return <Loading />;
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-skrawl-black text-skrawl-white flex flex-col">
+      <div className="min-h-screen bg-skrawl-purple text-skrawl-white flex flex-col">
         <NavigationHeader />
         <div className="flex-grow flex items-center justify-center">
           <p className="text-header font-header">Please sign in to browse profiles.</p>
@@ -90,7 +90,7 @@ const Profiles = () => {
   }, [hasMore, loading, appliedQuery, offset]);
 
   return (
-    <div className="min-h-screen bg-skrawl-black text-skrawl-white flex flex-col">
+    <div className="min-h-screen bg-skrawl-purple text-skrawl-white flex flex-col">
       <NavigationHeader />
       <div className="flex-grow mx-auto max-w-5xl w-full p-6 flex flex-col gap-8">
         <h1 className="text-logotype font-logotype">Profile Browser</h1>

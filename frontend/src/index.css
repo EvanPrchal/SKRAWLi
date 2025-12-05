@@ -17,11 +17,10 @@
 }
 
 @theme{
-    --color-skrawl-black: #241f21;
-    --color-skrawl-cyan: #2EC4B6;
-    --color-skrawl-orange: #FF9F1C;
-    --color-skrawl-magenta: #E81E65;
     --color-skrawl-purple: #1C0667;
+    --color-skrawl-magenta: #E81E65;
+    --color-skrawl-orange: #FF9F1C;
+    --color-skrawl-cyan: #2EC4B6;
     --color-skrawl-white: #F2F0EF;
 
      --font-logotype: "Londrina Solid";
@@ -36,29 +35,26 @@
 
 /* Theme overrides */
 :root[data-theme="coffee"] {
-    --color-skrawl-black: #7f5539;
-    --color-skrawl-cyan: #ddb892;
-    --color-skrawl-orange: #e6ccb2;
-    --color-skrawl-magenta: #b08968;
     --color-skrawl-purple: #7f5539;
+    --color-skrawl-magenta: #b08968;
+    --color-skrawl-orange: #ddb892;
+    --color-skrawl-cyan: #e6ccb2;
     --color-skrawl-white: #ede0d4;
 }
 
 :root[data-theme="cotton-candy"] {
-    --color-skrawl-black: #8093f1;
-    --color-skrawl-cyan: #72ddf7;
-    --color-skrawl-orange: #f7aef8;
-    --color-skrawl-magenta: #f7aef8;
-    --color-skrawl-purple: #b388eb;
-    --color-skrawl-white: #f4f4ed;
+    --color-skrawl-purple: #9c89b8;
+    --color-skrawl-magenta: #b8bedd;
+    --color-skrawl-orange: #f0a6ca;
+    --color-skrawl-cyan: #efc3e6;
+    --color-skrawl-white: #f0e6ef;
 }
 
 :root[data-theme="rose"] {
-    --color-skrawl-black: #880d1e;
-    --color-skrawl-cyan: #F26A8D;
-    --color-skrawl-orange: #f49cbb;
-    --color-skrawl-magenta: #F26A8D;
-    --color-skrawl-purple: #dd2d4a;
+    --color-skrawl-purple: #880d1e;
+    --color-skrawl-magenta: #dd2d4a;
+    --color-skrawl-orange: #f26a8d;
+    --color-skrawl-cyan: #f49cbb;
     --color-skrawl-white: #cbeef3;
 }
 

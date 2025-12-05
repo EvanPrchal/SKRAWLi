@@ -73,12 +73,12 @@ const CATALOG: CatalogItem[] = [
     colors: ["#7f5539", "#ddb892", "#e6ccb2", "#b08968", "#ede0d4"],
   },
   {
-    id: "cotton-candy-theme",
-    name: "Cotton Candy Theme",
-    description: "For cotton candy lovers",
+    id: "pastel-theme",
+    name: "Pastel Theme",
+    description: "Pastel theme for all the dreamers",
     price: 250,
     category: "Themes",
-    colors: ["#8093f1", "#72ddf7", "#f7aef8", "#b388eb", "#f4f4ed"],
+    colors: ["#9c89b8", "#f0a6ca", "#efc3e6", "#f0e6ef", "#b8bedd"],
   },
   {
     id: "rose-theme",
@@ -323,6 +323,7 @@ const Shop = () => {
   const themeIdMap: Record<string, string> = {
     "default-theme": "default",
     "coffee-theme": "coffee",
+    "pastel-theme": "cotton-candy",
     "cotton-candy-theme": "cotton-candy",
     "rose-theme": "rose",
   };
@@ -364,7 +365,7 @@ const Shop = () => {
           <section className="shop-area  bg-cover bg-center bg-blend-multiply flex-[2] flex flex-col gap-6 p-6 self-stretch text-skrawl-white">
             <header className="flex items-center justify-between">
               <h1 className="text-logotype font-logotype text-skrawl-white">Shop</h1>
-              <div className="text-header font-header text-skrawl-black bg-skrawl-white rounded-2xl px-2 flex items-center gap-2">
+              <div className="text-header font-header text-skrawl-purple bg-skrawl-white rounded-2xl px-2 flex items-center gap-2">
                 <img src="/src/assets/svgs/coin.png" alt="Coins" className="h-8 w-8 object-contain" />
                 {coins === null ? <span className="text-accent-cyan/60">Loading...</span> : <span className="text-accent-cyan">{coins}</span>}
               </div>

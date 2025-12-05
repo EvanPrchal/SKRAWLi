@@ -184,7 +184,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profileBackground, onBackgrou
                 onChange={(e) => setEditBio(e.target.value)}
                 maxLength={500}
                 placeholder="Tell us about yourself..."
-                className="text-body font-body text-skrawl-black border border-skrawl-purple rounded p-2 resize-none"
+                className="text-body font-body text-skrawl-purple border border-skrawl-purple rounded p-2 resize-none"
                 rows={4}
               />
               <span className="text-xs text-gray-500 text-right">{editBio.length}/500</span>
@@ -202,7 +202,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profileBackground, onBackgrou
                     }`}
                   >
                     <div className={`w-12 h-12 rounded ${option.value} border border-gray-400`} />
-                    <span className="text-xs text-skrawl-black">{option.name}</span>
+                    <span className="text-xs text-skrawl-purple">{option.name}</span>
                   </button>
                 ))}
               </div>
@@ -239,7 +239,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profileBackground, onBackgrou
         ) : (
           <div className="flex flex-col gap-3 items-center">
             <h2 className="text-header font-body text-skrawl-purple">{displayName || user?.name || "Username"}</h2>
-            <h2 className="text-body font-body text-skrawl-black max-w-md">{bio || "No bio yet."}</h2>
+            <h2 className="text-body font-body text-skrawl-purple max-w-md">{bio || "No bio yet."}</h2>
             <button onClick={handleEdit} className="px-4 py-2 bg-skrawl-purple text-white rounded hover:bg-skrawl-magenta transition-colors">
               Edit Profile
             </button>

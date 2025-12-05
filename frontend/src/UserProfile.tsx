@@ -74,7 +74,7 @@ const UserProfile = () => {
   if (isLoading || loading) return <Loading />;
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-skrawl-black text-skrawl-white flex flex-col">
+      <div className="min-h-screen bg-skrawl-purple text-skrawl-white flex flex-col">
         <NavigationHeader />
         <div className="flex-grow flex items-center justify-center">Sign in required.</div>
       </div>
@@ -82,7 +82,7 @@ const UserProfile = () => {
   }
   if (error) {
     return (
-      <div className="min-h-screen bg-skrawl-black text-skrawl-white flex flex-col">
+      <div className="min-h-screen bg-skrawl-purple text-skrawl-white flex flex-col">
         <NavigationHeader />
         <div className="flex-grow flex items-center justify-center">{error}</div>
       </div>
@@ -95,7 +95,12 @@ const UserProfile = () => {
     .filter((b) => b.trim().length > 0)
     .slice(0, 3);
 
-  const bg = profile.profile_background || "bg-skrawl-black";
+  const normalizeBackground = (value?: string | null) => {
+    if (!value) return "bg-skrawl-purple";
+    return value === "bg-skrawl-black" ? "bg-skrawl-purple" : value;
+  };
+
+  const bg = normalizeBackground(profile.profile_background);
   const isHex = bg.startsWith("#");
   const bgClass = isHex ? "" : bg;
   const bgStyle = isHex ? { backgroundColor: bg } : {};
@@ -105,7 +110,7 @@ const UserProfile = () => {
       <NavigationHeader />
       <div className="flex-grow flex items-center justify-center p-4">
         <div className="w-full max-w-5xl h-[85vh] flex flex-col bg-skrawl-white rounded-lg overflow-hidden border border-skrawl-purple/30">
-          <div className="flex justify-between items-center px-6 py-4 bg-skrawl-black text-skrawl-white">
+          <div className="flex justify-between items-center px-6 py-4 bg-skrawl-purple text-skrawl-white">
             <h1 className="text-header font-header">{profile.display_name || `User #${profile.id}`}</h1>
             <div className="flex gap-3">
               {isFriend ? (
@@ -144,7 +149,7 @@ const UserProfile = () => {
             </div>
             <div className="max-w-2xl w-full flex flex-col items-center gap-4">
               <h2 className="text-header font-header text-skrawl-purple">Bio</h2>
-              <p className="text-sm font-body text-skrawl-black whitespace-pre-wrap w-full text-center">{profile.bio || "No bio provided."}</p>
+              <p className="text-sm font-body text-skrawl-purple whitespace-pre-wrap w-full text-center">{profile.bio || "No bio provided."}</p>
             </div>
             <div className="max-w-2xl w-full flex flex-col items-center gap-6">
               <h2 className="text-header font-header text-skrawl-purple">Showcased Badges</h2>

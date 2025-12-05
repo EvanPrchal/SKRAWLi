@@ -187,11 +187,11 @@ const FreeDraw = () => {
   const api = useApi();
   const { isAuthenticated } = useAuth0();
 
-  const [color, setColor] = useState<string>("#241f21");
-  const [prevColor, setPrevColor] = useState<string>("#241f21");
+  const [color, setColor] = useState<string>("#1C0667");
+  const [prevColor, setPrevColor] = useState<string>("#1C0667");
   const [size, setSize] = useState<number>(6);
   const [isEraser, setIsEraser] = useState<boolean>(false);
-  const [presets, setPresets] = useState<string[]>(["#1C0667", "#E81E65", "#FF9F1C", "#2EC4B6", "#241f21", "#ffffff"]);
+  const [presets, setPresets] = useState<string[]>(["#1C0667", "#E81E65", "#FF9F1C", "#2EC4B6", "#ffffff"]);
   const [ownedBrushes, setOwnedBrushes] = useState<string[]>([]);
   const [ownedBrushesLoaded, setOwnedBrushesLoaded] = useState<boolean>(false);
   const [activeBrush, setActiveBrush] = useState<BrushEffect>("normal");
@@ -199,7 +199,12 @@ const FreeDraw = () => {
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const redoStackRef = useRef<Stroke[]>([]);
   const currentStrokeRef = useRef<Stroke | null>(null);
-  const [profileBackground, setProfileBackground] = useState<string>("bg-skrawl-black");
+  const normalizeProfileBackground = (value?: string | null) => {
+    if (!value) return "bg-skrawl-purple";
+    return value === "bg-skrawl-black" ? "bg-skrawl-purple" : value;
+  };
+
+  const [profileBackground, setProfileBackground] = useState<string>("bg-skrawl-purple");
   const [profileBgStyle, setProfileBgStyle] = useState<Record<string, string>>({});
   const [profileBgLoaded, setProfileBgLoaded] = useState<boolean>(false);
   const drawingSurfaceRef = useRef<HTMLDivElement | null>(null);
@@ -226,7 +231,7 @@ const FreeDraw = () => {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      setProfileBackground("bg-skrawl-black");
+      setProfileBackground("bg-skrawl-purple");
       setProfileBgStyle({});
       setProfileBgLoaded(true);
       return;
@@ -234,7 +239,7 @@ const FreeDraw = () => {
     api
       .getProfileBackground()
       .then((data) => {
-        const bg = data.profile_background || "bg-skrawl-black";
+        const bg = normalizeProfileBackground(data.profile_background);
         setProfileBackground(bg);
         if (bg.startsWith("#")) {
           setProfileBgStyle({ backgroundColor: bg });
@@ -267,7 +272,6 @@ const FreeDraw = () => {
       getVar("--color-skrawl-magenta"),
       getVar("--color-skrawl-orange"),
       getVar("--color-skrawl-cyan"),
-      getVar("--color-skrawl-black"),
       getVar("--color-skrawl-white"),
     ].filter(Boolean) as string[];
     if (themedPresets.length) setPresets(themedPresets);
@@ -521,7 +525,7 @@ const FreeDraw = () => {
                   borderRadius: activeBrush === "pixel" ? "12%" : "9999px",
                   borderColor: isEraser ? "#E81E65" : getEffectiveColor(),
                   transform: "translate(-50%, -50%)",
-                  boxShadow: isEraser ? "0 0 0 1px rgba(36,31,33,0.15)" : "none",
+                  boxShadow: isEraser ? "0 0 0 1px rgba(28,6,103,0.15)" : "none",
                   backgroundColor: isEraser ? "rgba(255,255,255,0.2)" : "transparent",
                 }}
               />

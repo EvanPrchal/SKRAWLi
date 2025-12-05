@@ -12,7 +12,12 @@ import { useDataReady } from "./lib/useDataReady";
 const Profile = () => {
   const { isLoading } = useAuth0();
   const api = useApi();
-  const [profileBackground, setProfileBackground] = useState<string>("bg-skrawl-black");
+  const normalizeBackground = (value?: string | null) => {
+    if (!value) return "bg-skrawl-purple";
+    return value === "bg-skrawl-black" ? "bg-skrawl-purple" : value;
+  };
+
+  const [profileBackground, setProfileBackground] = useState<string>("bg-skrawl-purple");
   const [backgroundLoaded, setBackgroundLoaded] = useState<boolean>(false);
   const [badgesLoaded, setBadgesLoaded] = useState<boolean>(false);
   const [allBadges, setAllBadges] = useState<any[]>([]);
@@ -26,7 +31,7 @@ const Profile = () => {
       .getProfileBackground()
       .then((data) => {
         if (!cancelled) {
-          setProfileBackground(data.profile_background || "bg-skrawl-black");
+          setProfileBackground(normalizeBackground(data.profile_background));
           setBackgroundLoaded(true);
         }
       })
@@ -66,7 +71,7 @@ const Profile = () => {
       <div className="flex-1 flex justify-center items-center px-4 py-8">
         <div className="w-full max-w-5xl flex flex-col bg-skrawl-white overflow-hidden shadow-lg rounded-lg">
           <Tab.Group as="div" className="flex flex-col min-h-[60vh]">
-            <Tab.List className="flex w-full justify-around text-header font-header bg-skrawl-black">
+            <Tab.List className="flex w-full justify-around text-header font-header bg-skrawl-purple">
               {["Profile", "Badges", "Friends"].map((tab) => (
                 <Tab
                   key={tab}

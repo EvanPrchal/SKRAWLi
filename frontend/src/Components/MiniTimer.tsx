@@ -10,7 +10,7 @@ const MiniTimer: React.FC<MiniTimerProps> = ({ time, show }) => {
 
   return (
     <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
-      <div className="bg-skrawl-black/80 text-skrawl-white px-4 py-2 rounded-full font-logotype text-xl">{Math.max(time, 0).toFixed(2)}s</div>
+      <div className="bg-skrawl-purple/80 text-skrawl-white px-4 py-2 rounded-full font-logotype text-xl">{Math.max(time, 0).toFixed(2)}s</div>
     </div>
   );
 };

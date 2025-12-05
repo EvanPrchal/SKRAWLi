@@ -33,7 +33,7 @@ const OwnedBadges = ({ allBadges, ownedCodes }: OwnedBadgesProps) => {
             </div>
             <div className="flex flex-col gap-1 flex-grow">
               <div className="text-header font-header text-skrawl-purple">{badge.name}</div>
-              <p className="text-body font-body text-skrawl-black text-sm">{badge.description ?? "Unlock by playing!"}</p>
+              <p className="text-body font-body text-skrawl-purple text-sm">{badge.description ?? "Unlock by playing!"}</p>
               <span className={`text-xs font-body uppercase tracking-wide ${unlocked ? "text-skrawl-purple" : "text-gray-500"}`}>
                 {unlocked ? "✓ Unlocked" : "Locked"}
               </span>

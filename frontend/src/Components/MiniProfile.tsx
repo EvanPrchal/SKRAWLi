@@ -27,7 +27,7 @@ const MiniProfile: React.FC<MiniProfileProps> = ({ profile, loading, error, isFr
 
   return (
     <div className="flex flex-col h-full bg-skrawl-white border-l border-skrawl-purple/30">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-skrawl-purple/30 bg-skrawl-black text-skrawl-white">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-skrawl-purple/30 bg-skrawl-purple text-skrawl-white">
         <h2 className="text-header font-header">{profile?.display_name || (profile ? `User #${profile.id}` : "Profile")}</h2>
         <button onClick={onClose} className="text-sm px-3 py-1 rounded bg-gray-300 text-skrawl-purple hover:bg-gray-400">
           Close

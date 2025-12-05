@@ -98,8 +98,8 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
   })();
 
   const pointerIsSquare = brushType === "pixel";
-  const pointerBorderColor = pointerIsSquare ? "#241f21" : "rgba(36,31,33,0.85)";
-  const pointerFillColor = pointerIsSquare ? "rgba(36,31,33,0.25)" : "rgba(255,255,255,0.12)";
+  const pointerBorderColor = pointerIsSquare ? "#1C0667" : "rgba(28,6,103,0.85)";
+  const pointerFillColor = pointerIsSquare ? "rgba(28,6,103,0.25)" : "rgba(255,255,255,0.12)";
 
   const updatePointerIndicator = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -285,7 +285,7 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
       const shouldSmooth = brush !== "pixel" && pts.length >= 3;
       const points = shouldSmooth ? generateSmoothPoints(pts) : pts;
       if (brush === "pixel") {
-        ctx.fillStyle = "#241f21";
+        ctx.fillStyle = "#1C0667";
         const pixelSize = 8;
         for (let i = 0; i < points.length; i++) {
           const pt = points[i];
@@ -324,7 +324,7 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
         ctx.lineWidth = 5;
-        ctx.strokeStyle = "#241f21";
+        ctx.strokeStyle = "#1C0667";
         createSmoothPath(ctx, points);
         ctx.stroke();
       }
@@ -411,7 +411,7 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
             border: "none",
             outline: `1px solid ${pointerBorderColor}`,
             backgroundColor: pointerFillColor,
-            boxShadow: "0 0 2px rgba(36,31,33,0.28)",
+            boxShadow: "0 0 2px rgba(28,6,103,0.28)",
           }}
         />
       )}

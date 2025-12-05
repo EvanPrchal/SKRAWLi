@@ -12,7 +12,7 @@ class User(SQLModel, table=True):
     coins: int = Field(default=0)
     bio: Optional[str] = Field(default=None, max_length=500)
     display_name: Optional[str] = Field(default=None, max_length=50)
-    profile_background: Optional[str] = Field(default="bg-skrawl-black", max_length=50)
+    profile_background: Optional[str] = Field(default="bg-skrawl-purple", max_length=50)
     showcased_badges: Optional[str] = Field(default=None, max_length=200)  # Comma-separated badge codes
 
     badges: list["UserBadge"] = Relationship(back_populates="user")
