@@ -7,6 +7,7 @@ import type { Minigame } from "./types";
 import { getRandomMinigames } from "./minigamesData";
 import TraceCanvas from "./TraceCanvas";
 import countdownSound from "../assets/sound/countdown.wav";
+import startSound from "../assets/sound/start.wav";
 import { useSfxVolume } from "../lib/sfxVolume";
 
 interface MinigamesProps {
@@ -75,6 +76,19 @@ const Minigames: React.FC<MinigamesProps> = ({
       void audio.play().catch(() => undefined);
     } catch (error) {
       console.error("Failed to play countdown sound", error);
+    }
+  }, [sfxVolume]);
+
+  const playStartSound = useCallback(() => {
+    if (sfxVolume <= 0) {
+      return;
+    }
+    try {
+      const audio = new Audio(startSound);
+      audio.volume = Math.min(1, Math.max(0, sfxVolume));
+      void audio.play().catch(() => undefined);
+    } catch (error) {
+      console.error("Failed to play start sound", error);
     }
   }, [sfxVolume]);
 
@@ -183,7 +197,7 @@ const Minigames: React.FC<MinigamesProps> = ({
           playCountdownSound();
           setTimeout(() => {
             setCountdownValue("SKRAWL!");
-            playCountdownSound();
+            playStartSound();
             setTimeout(() => {
               setCountdownValue("");
               setTimerActive(true);
@@ -198,7 +212,7 @@ const Minigames: React.FC<MinigamesProps> = ({
     if (!hasShownCountdown && !timerActive && !showTransition) {
       startCountdown();
     }
-  }, [hasShownCountdown, timerActive, showTransition, playCountdownSound]);
+  }, [hasShownCountdown, timerActive, showTransition, playCountdownSound, playStartSound]);
 
   // Transition effect
   useEffect(() => {
@@ -247,10 +261,16 @@ const Minigames: React.FC<MinigamesProps> = ({
         }));
       }
     } else {
-      // Failed attempt - immediately swap to next minigame (no transition overlay)
-      const currentType = currentMinigame.id;
-      const randomMinigames = getRandomMinigames();
-      const nextGame = randomMinigames.find((m) => m.id === currentType) || getRandomMinigame();
+      // Failed attempt - immediately swap to a fresh random minigame (no transition overlay)
+      const currentId = currentMinigame.id;
+      let nextGame = getRandomMinigame();
+      if (nextGame.id === currentId) {
+        const pool = getRandomMinigames();
+        const alternative = pool.find((m) => m.id !== currentId);
+        if (alternative) {
+          nextGame = alternative;
+        }
+      }
       setResetToken((token) => token + 1);
       setCurrentMinigame(nextGame);
       setPendingMinigame(null);
