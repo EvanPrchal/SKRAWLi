@@ -1,6 +1,6 @@
 # SKRAWLi
 
-Creative multiplayer drawing experience built with a FastAPI backend and a React/Vite frontend.
+Warioware inspired drawing minigames built with a FastAPI backend and a React/Vite frontend.
 
 ## Prerequisites
 
