@@ -13,6 +13,39 @@ import Credits from "./Credits.tsx";
 import Options from "./Options.tsx";
 import Shop from "./Shop.tsx";
 import UserProfile from "./UserProfile.tsx";
+
+declare global {
+  interface Window {
+    __skrawliDragGuardsInstalled__?: boolean;
+  }
+}
+
+if (typeof window !== "undefined" && !window.__skrawliDragGuardsInstalled__) {
+  const INTERACTIVE_SELECTOR = "button, a, [role='button'], input, select, textarea";
+
+  const preventDragStart = (event: DragEvent) => {
+    const target = event.target as HTMLElement | null;
+    if (target?.closest(INTERACTIVE_SELECTOR)) {
+      event.preventDefault();
+    }
+  };
+
+  const preventPenDrag = (event: PointerEvent) => {
+    if (!(event.buttons & 1)) return; // only when primary button (pen tip) is pressed
+    if (event.pointerType !== "pen" && event.pointerType !== "touch") {
+      return;
+    }
+    const target = event.target as HTMLElement | null;
+    if (target?.closest(INTERACTIVE_SELECTOR)) {
+      event.preventDefault();
+    }
+  };
+
+  window.addEventListener("dragstart", preventDragStart);
+  window.addEventListener("pointermove", preventPenDrag, { passive: false });
+
+  window.__skrawliDragGuardsInstalled__ = true;
+}
 createRoot(document.getElementById("root")!).render(
   <Auth0Provider
     domain={import.meta.env.VITE_AUTH0_DOMAIN}

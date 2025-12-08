@@ -33,6 +33,20 @@
     --text-body: 20px;
 }
 
+/* Prevent accidental dragging/selection on interactive controls */
+button,
+a,
+[role="button"],
+input,
+select,
+textarea {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-user-drag: none;
+    touch-action: manipulation;
+}
+
 /* Theme overrides */
 :root[data-theme="coffee"] {
     --color-skrawl-purple: #7f5539;
