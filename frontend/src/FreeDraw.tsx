@@ -9,10 +9,103 @@ import { useAuth0 } from "@auth0/auth0-react";
 type BrushEffect = "normal" | "rainbow" | "pixel";
 
 type StrokePoint = { x: number; y: number; hue?: number };
-type Stroke = { brush: BrushEffect; color: string; size: number; erase: boolean; points: StrokePoint[] };
+type Stroke = {
+  kind: "stroke";
+  brush: BrushEffect;
+  color: string;
+  size: number;
+  erase: boolean;
+  points: StrokePoint[];
+};
+
+type FillAction = {
+  kind: "fill";
+  x: number;
+  y: number;
+  color: string;
+};
+
+type CanvasAction = Stroke | FillAction;
 
 const ERASE_COLOR = "rgba(0,0,0,1)";
 const SMOOTH_SEGMENTS_PER_CURVE = 10; // Number of Catmull–Rom samples inserted per segment
+
+const hexToRgba = (hex: string): [number, number, number, number] => {
+  let value = hex.trim();
+  if (value.startsWith("#")) {
+    value = value.slice(1);
+  }
+  if (value.length === 3) {
+    value = value
+      .split("")
+      .map((char) => char + char)
+      .join("");
+  }
+  if (value.length !== 6) {
+    return [0, 0, 0, 255];
+  }
+  const r = parseInt(value.slice(0, 2), 16);
+  const g = parseInt(value.slice(2, 4), 16);
+  const b = parseInt(value.slice(4, 6), 16);
+  return [r, g, b, 255];
+};
+
+const colorsEqual = (data: Uint8ClampedArray, index: number, color: [number, number, number, number]) =>
+  data[index] === color[0] && data[index + 1] === color[1] && data[index + 2] === color[2] && data[index + 3] === color[3];
+
+const applyFillToContext = (ctx: CanvasRenderingContext2D, action: FillAction): boolean => {
+  const { color, x, y } = action;
+  const canvasWidth = ctx.canvas.width;
+  const canvasHeight = ctx.canvas.height;
+  if (canvasWidth === 0 || canvasHeight === 0) {
+    return false;
+  }
+
+  const targetX = Math.floor(x);
+  const targetY = Math.floor(y);
+
+  if (targetX < 0 || targetY < 0 || targetX >= canvasWidth || targetY >= canvasHeight) {
+    return false;
+  }
+
+  const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
+  const { data } = imageData;
+  const startIndex = (targetY * canvasWidth + targetX) * 4;
+  const targetColor: [number, number, number, number] = [data[startIndex], data[startIndex + 1], data[startIndex + 2], data[startIndex + 3]];
+  const fillColor = hexToRgba(color);
+
+  if (colorsEqual(data, startIndex, fillColor)) {
+    return false;
+  }
+
+  const stack: number[] = [targetY * canvasWidth + targetX];
+
+  while (stack.length) {
+    const pixelIndex = stack.pop()!;
+    const dataIndex = pixelIndex * 4;
+
+    if (!colorsEqual(data, dataIndex, targetColor)) {
+      continue;
+    }
+
+    // Color this pixel
+    data[dataIndex] = fillColor[0];
+    data[dataIndex + 1] = fillColor[1];
+    data[dataIndex + 2] = fillColor[2];
+    data[dataIndex + 3] = fillColor[3];
+
+    const px = pixelIndex % canvasWidth;
+    const py = Math.floor(pixelIndex / canvasWidth);
+
+    if (px > 0) stack.push(pixelIndex - 1);
+    if (px < canvasWidth - 1) stack.push(pixelIndex + 1);
+    if (py > 0) stack.push(pixelIndex - canvasWidth);
+    if (py < canvasHeight - 1) stack.push(pixelIndex + canvasWidth);
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+  return true;
+};
 
 const appendPointToStroke = (stroke: Stroke, x: number, y: number) => {
   switch (stroke.brush) {
@@ -190,17 +283,20 @@ const FreeDraw = () => {
   const [color, setColor] = useState<string>("#1C0667");
   const [prevColor, setPrevColor] = useState<string>("#1C0667");
   const [size, setSize] = useState<number>(6);
-  const [isEraser, setIsEraser] = useState<boolean>(false);
+  const [mode, setMode] = useState<"brush" | "eraser" | "fill">("brush");
   const [presets, setPresets] = useState<string[]>(["#1C0667", "#E81E65", "#FF9F1C", "#2EC4B6", "#ffffff"]);
   const [ownedBrushes, setOwnedBrushes] = useState<string[]>([]);
   const [ownedBrushesLoaded, setOwnedBrushesLoaded] = useState<boolean>(false);
   const [activeBrush, setActiveBrush] = useState<BrushEffect>("normal");
   const isDrawingRef = useRef<boolean>(false);
-  const [strokes, setStrokes] = useState<Stroke[]>([]);
-  const redoStackRef = useRef<Stroke[]>([]);
+  const [strokes, setStrokes] = useState<CanvasAction[]>([]);
+  const redoStackRef = useRef<CanvasAction[]>([]);
   const currentStrokeRef = useRef<Stroke | null>(null);
   const drawingSurfaceRef = useRef<HTMLDivElement | null>(null);
   const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
+  const isBrushMode = mode === "brush";
+  const isEraserMode = mode === "eraser";
+  const isFillMode = mode === "fill";
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -222,7 +318,8 @@ const FreeDraw = () => {
   }, [isAuthenticated, api]);
 
   const getEffectiveColor = () => {
-    if (isEraser) return "#ffffff";
+    if (isEraserMode) return "#ffffff";
+    if (isFillMode) return color;
     if (activeBrush === "rainbow") {
       const dynamicHue = Math.floor((Date.now() / 30) % 360);
       return `hsl(${dynamicHue}, 100%, 60%)`;
@@ -251,9 +348,15 @@ const FreeDraw = () => {
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const renderQueue = previewStroke ? [...strokes, previewStroke] : strokes;
-      for (const stroke of renderQueue) {
-        renderStroke(ctx, stroke);
+      for (const action of strokes) {
+        if (action.kind === "stroke") {
+          renderStroke(ctx, action);
+        } else {
+          applyFillToContext(ctx, action);
+        }
+      }
+      if (previewStroke) {
+        renderStroke(ctx, previewStroke);
       }
     },
     [strokes]
@@ -324,13 +427,33 @@ const FreeDraw = () => {
     ensureCanvasSize();
     updateCursorIndicator(e);
     const { x, y } = getCanvasPosition(e);
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!ctx) return;
+
+    if (isFillMode) {
+      const fillAction: FillAction = {
+        kind: "fill",
+        x,
+        y,
+        color,
+      };
+      const applied = applyFillToContext(ctx, fillAction);
+      if (applied) {
+        redoStackRef.current = [];
+        setStrokes((prev) => [...prev, fillAction]);
+      }
+      return;
+    }
+
     const strokeSize = size;
     const strokeColor = getEffectiveColor();
     const stroke: Stroke = {
+      kind: "stroke",
       brush: activeBrush,
       color: strokeColor,
       size: strokeSize,
-      erase: isEraser,
+      erase: isEraserMode,
       points: [],
     };
     redoStackRef.current = [];
@@ -428,9 +551,12 @@ const FreeDraw = () => {
     const onKey = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
       if (key === "b") {
-        setIsEraser(false);
+        setMode("brush");
       } else if (key === "e") {
-        setIsEraser(true);
+        setMode("eraser");
+      } else if (key === "f") {
+        setMode("fill");
+        setActiveBrush("normal");
       } else if (key === "z" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         if (e.shiftKey) handleRedo();
@@ -445,7 +571,7 @@ const FreeDraw = () => {
   const ready = useDataReady([ownedBrushesLoaded]);
   if (!ready) return <Loading />;
 
-  const previewSize = Math.max(4, size);
+  const previewSize = isFillMode ? 24 : Math.max(4, size);
 
   return (
     <div className={`min-h-screen ${containerBgClass} bg-[url('/src/assets/images/background.png')] bg-cover font-body`}>
@@ -475,7 +601,7 @@ const FreeDraw = () => {
                 cursor: "none",
               }}
             />
-            {activeBrush !== "normal" && !isEraser && (
+            {isBrushMode && activeBrush !== "normal" && (
               <div className="absolute top-2 left-2 bg-black/70 text-white px-3 py-1 rounded-full text-xs font-body">
                 {activeBrush === "rainbow" && "🌈 Rainbow"}
                 {activeBrush === "pixel" && "🟦 Pixel"}
@@ -489,11 +615,11 @@ const FreeDraw = () => {
                   top: cursorPos.y,
                   width: `${previewSize}px`,
                   height: `${previewSize}px`,
-                  borderRadius: activeBrush === "pixel" ? "12%" : "9999px",
-                  borderColor: isEraser ? "#E81E65" : getEffectiveColor(),
+                  borderRadius: isBrushMode && activeBrush === "pixel" ? "12%" : "9999px",
+                  borderColor: isEraserMode ? "#E81E65" : getEffectiveColor(),
                   transform: "translate(-50%, -50%)",
-                  boxShadow: isEraser ? "0 0 0 1px rgba(28,6,103,0.15)" : "none",
-                  backgroundColor: isEraser ? "rgba(255,255,255,0.2)" : "transparent",
+                  boxShadow: isEraserMode ? "0 0 0 1px rgba(28,6,103,0.15)" : "none",
+                  backgroundColor: isFillMode ? `${color}33` : isEraserMode ? "rgba(255,255,255,0.2)" : "transparent",
                 }}
               />
             )}
@@ -507,6 +633,7 @@ const FreeDraw = () => {
                   value={activeBrush}
                   onChange={(e) => setActiveBrush(e.target.value as BrushEffect)}
                   className="px-3 py-2 rounded-md border border-skrawl-purple/40 bg-white text-skrawl-purple font-body text-sm focus:outline-none focus:ring-2 focus:ring-skrawl-magenta"
+                  disabled={!isBrushMode}
                 >
                   <option value="normal">Normal</option>
                   {ownedBrushes.includes("rainbow-brush") && <option value="rainbow">🌈 Rainbow</option>}
@@ -519,22 +646,34 @@ const FreeDraw = () => {
               <span className="text-body font-body text-skrawl-purple">Mode</span>
               <div className="flex gap-2">
                 <button
-                  onClick={() => setIsEraser(false)}
+                  onClick={() => setMode("brush")}
                   className={`px-3 py-1 rounded-md border font-body text-sm ${
-                    !isEraser ? "bg-skrawl-purple text-white border-skrawl-purple" : "bg-white text-skrawl-purple border-skrawl-purple/40"
+                    isBrushMode ? "bg-skrawl-purple text-white border-skrawl-purple" : "bg-white text-skrawl-purple border-skrawl-purple/40"
                   }`}
                   title="Brush (B)"
                 >
                   Pencil
                 </button>
                 <button
-                  onClick={() => setIsEraser(true)}
+                  onClick={() => setMode("eraser")}
                   className={`px-3 py-1 rounded-md border font-body text-sm ${
-                    isEraser ? "bg-skrawl-purple text-white border-skrawl-purple" : "bg-white text-skrawl-purple border-skrawl-purple/40"
+                    isEraserMode ? "bg-skrawl-purple text-white border-skrawl-purple" : "bg-white text-skrawl-purple border-skrawl-purple/40"
                   }`}
                   title="Eraser (E)"
                 >
                   Eraser
+                </button>
+                <button
+                  onClick={() => {
+                    setMode("fill");
+                    setActiveBrush("normal");
+                  }}
+                  className={`px-3 py-1 rounded-md border font-body text-sm ${
+                    isFillMode ? "bg-skrawl-purple text-white border-skrawl-purple" : "bg-white text-skrawl-purple border-skrawl-purple/40"
+                  }`}
+                  title="Fill (F)"
+                >
+                  Fill
                 </button>
               </div>
             </div>
@@ -563,9 +702,15 @@ const FreeDraw = () => {
                     setPrevColor(color);
                     setColor(next);
                   }}
-                  disabled={isEraser || activeBrush === "rainbow"}
+                  disabled={isEraserMode || (isBrushMode && activeBrush === "rainbow")}
                   className="w-10 h-10 p-1 rounded cursor-pointer border border-gray-300 disabled:opacity-60"
-                  title={activeBrush === "rainbow" ? "Color auto-changes with rainbow brush" : "Pick stroke color"}
+                  title={
+                    isBrushMode && activeBrush === "rainbow"
+                      ? "Color auto-changes with rainbow brush"
+                      : mode === "eraser"
+                      ? "Eraser uses white"
+                      : "Pick fill/brush color"
+                  }
                 />
                 <div className="relative">
                   <button
@@ -577,7 +722,7 @@ const FreeDraw = () => {
                       setColor(previous);
                       setPrevColor(current);
                     }}
-                    disabled={activeBrush === "rainbow"}
+                    disabled={isBrushMode && activeBrush === "rainbow"}
                     className="w-6 h-6 rounded-full border border-gray-300 shadow-sm hover:ring-2 hover:ring-skrawl-magenta focus:outline-none disabled:opacity-60"
                     style={{ backgroundColor: prevColor }}
                   />
@@ -598,7 +743,7 @@ const FreeDraw = () => {
                       c.toLowerCase() === color.toLowerCase() ? "ring-2 ring-skrawl-magenta" : "border-gray-300"
                     }`}
                     style={{ backgroundColor: c }}
-                    disabled={isEraser || activeBrush === "rainbow"}
+                    disabled={isEraserMode || (isBrushMode && activeBrush === "rainbow")}
                     title={c}
                     onClick={() => {
                       setPrevColor(color);
