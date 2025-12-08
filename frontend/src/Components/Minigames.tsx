@@ -3,7 +3,7 @@ import threeCountdownImg from "../assets/images/3_countdown.png";
 import twoCountdownImg from "../assets/images/2_countdown.png";
 import oneCountdownImg from "../assets/images/1_countdown.png";
 import goCountdownImg from "../assets/images/go_countdown.png";
-import type { Minigame } from "./types";
+import type { Minigame, Shape, Point } from "./types";
 import { getRandomMinigames } from "./minigamesData";
 import TraceCanvas from "./TraceCanvas";
 import countdownSound from "../assets/sound/countdown.wav";
@@ -19,6 +19,32 @@ interface MinigamesProps {
   skipCountdown?: boolean; // Skip the initial countdown if true
   freezeTimer?: boolean; // Pause active timer while true
 }
+
+const clonePoint = (point: Point): Point => ({
+  x: point.x,
+  y: point.y,
+});
+
+const cloneShape = (shape: Shape): Shape => {
+  if (shape.type === "polygon") {
+    return { ...shape, points: shape.points.map(clonePoint) };
+  }
+  if (shape.type === "circle") {
+    return { ...shape, center: clonePoint(shape.center) };
+  }
+  return { ...shape, center: clonePoint(shape.center) };
+};
+
+const cloneMinigame = (minigame: Minigame): Minigame => ({
+  ...minigame,
+  shapes: minigame.shapes.map(cloneShape),
+  guides: minigame.guides?.map(cloneShape),
+});
+
+const instantiateMinigame = (minigame: Minigame): Minigame => ({
+  ...cloneMinigame(minigame),
+  currentShapeIndex: 0,
+});
 
 const MINIGAME_TIME = 10; // default seconds per minigame
 
@@ -46,7 +72,13 @@ const Minigames: React.FC<MinigamesProps> = ({
     return randomMinigames[randomIndex];
   }, []);
 
-  const [currentMinigame, setCurrentMinigame] = useState<Minigame>(specificMinigame ?? getRandomMinigame());
+  const getRandomMinigameById = useCallback((id: string) => {
+    const randomMinigames = getRandomMinigames();
+    return randomMinigames.find((game) => game.id === id);
+  }, []);
+
+  const initialMinigame = specificMinigame ? instantiateMinigame(specificMinigame) : getRandomMinigame();
+  const [currentMinigame, setCurrentMinigame] = useState<Minigame>(initialMinigame);
   const [showTransition, setShowTransition] = useState(false);
   const [timeLeft, setTimeLeft] = useState(initialTime ?? MINIGAME_TIME);
   const [timerActive, setTimerActive] = useState(skipCountdown);
@@ -93,6 +125,12 @@ const Minigames: React.FC<MinigamesProps> = ({
   }, [sfxVolume]);
 
   // Ensure external skip flag permanently suppresses the countdown (e.g. after notifications)
+  useEffect(() => {
+    if (specificMinigame) {
+      setCurrentMinigame(instantiateMinigame(specificMinigame));
+    }
+  }, [specificMinigame]);
+
   useEffect(() => {
     if (skipCountdown && !hasShownCountdown) {
       setHasShownCountdown(true);
@@ -261,16 +299,8 @@ const Minigames: React.FC<MinigamesProps> = ({
         }));
       }
     } else {
-      // Failed attempt - immediately swap to a fresh random minigame (no transition overlay)
-      const currentId = currentMinigame.id;
-      let nextGame = getRandomMinigame();
-      if (nextGame.id === currentId) {
-        const pool = getRandomMinigames();
-        const alternative = pool.find((m) => m.id !== currentId);
-        if (alternative) {
-          nextGame = alternative;
-        }
-      }
+      // Failed attempt - stay on the same minigame type but generate a fresh instance
+      const nextGame = specificMinigame ? instantiateMinigame(getRandomMinigameById(specificMinigame.id) ?? specificMinigame) : getRandomMinigame();
       setResetToken((token) => token + 1);
       setCurrentMinigame(nextGame);
       setPendingMinigame(null);
