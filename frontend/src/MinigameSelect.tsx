@@ -137,7 +137,7 @@ const MinigameSelect = () => {
       setMinigamesCompleted(newCount);
 
       if (newCount % 5 === 0 && configuredMinigameTime > 5) {
-        const newTime = configuredMinigameTime - 2;
+        const newTime = configuredMinigameTime - 2.5;
         setConfiguredMinigameTime(newTime);
         setTimeRemaining(newTime);
         if (notificationTimeoutRef.current !== null) {
