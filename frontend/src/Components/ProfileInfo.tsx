@@ -1,6 +1,7 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import { useEffect, useState } from "react";
 import { useApi } from "../lib/api";
+import { useProfileImage } from "../lib/useProfileImage";
 
 type BadgeInfo = {
   code: string;
@@ -25,6 +26,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profileBackground, onBackgrou
   const [bio, setBio] = useState<string>("");
   const [displayName, setDisplayName] = useState<string>("");
   const [pictureUrl, setPictureUrl] = useState<string | null>(null);
+  const displayImage = useProfileImage(user?.sub || "unknown", pictureUrl);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasColorPicker, setHasColorPicker] = useState(false);
@@ -154,10 +156,10 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profileBackground, onBackgrou
   return (
     <div className="text-center flex justify-around w-full gap-8">
       <section className="flex flex-col justify-center items-center space-y-4">
-        {pictureUrl ? (
+        {displayImage ? (
           <img
             className="w-28 h-28 rounded-full border border-skrawl-purple/40 object-cover"
-            src={pictureUrl}
+            src={displayImage}
             alt={displayName || user?.name || "Profile"}
           />
         ) : (

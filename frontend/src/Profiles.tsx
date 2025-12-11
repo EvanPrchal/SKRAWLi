@@ -3,6 +3,7 @@ import NavigationHeader from "./Components/NavigationHeader";
 import { useApi } from "./lib/api";
 import { useAuth0 } from "@auth0/auth0-react";
 import Loading from "./Components/Loading";
+import { useProfileImage } from "./lib/useProfileImage";
 
 interface UserSummary {
   id: number;
@@ -12,6 +13,36 @@ interface UserSummary {
   picture_url: string | null;
   showcased_badges: string | null;
 }
+
+interface ProfileCardProps {
+  user: UserSummary;
+}
+
+const ProfileCard: React.FC<ProfileCardProps> = ({ user: u }) => {
+  const displayImage = useProfileImage(u.id, u.picture_url);
+
+  return (
+    <div className="rounded border border-skrawl-purple/30 bg-white/80 p-3 flex flex-col gap-2">
+      <div className="flex items-center gap-3">
+        {displayImage ? (
+          <img
+            src={displayImage}
+            alt={u.display_name || `User ${u.id}`}
+            className="w-10 h-10 rounded-full border border-skrawl-purple/40 object-cover"
+          />
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-skrawl-purple/20 border border-skrawl-purple/40 flex items-center justify-center text-skrawl-purple font-header">
+            {(u.display_name || "U").charAt(0).toUpperCase()}
+          </div>
+        )}
+        <div className="flex flex-col">
+          <div className="text-header font-header">{u.display_name || `User #${u.id}`}</div>
+        </div>
+      </div>
+      <p className="text-sm font-body line-clamp-3">{u.bio || "No bio"}</p>
+    </div>
+  );
+};
 
 const Profiles = () => {
   const api = useApi();
@@ -115,25 +146,7 @@ const Profiles = () => {
           {results.length > 0 && (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
               {results.map((u) => (
-                <div key={u.id} className="rounded border border-skrawl-purple/30 bg-white/80 p-3 flex flex-col gap-2">
-                  <div className="flex items-center gap-3">
-                    {u.picture_url ? (
-                      <img
-                        src={u.picture_url}
-                        alt={u.display_name || `User ${u.id}`}
-                        className="w-10 h-10 rounded-full border border-skrawl-purple/40 object-cover"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-skrawl-purple/20 border border-skrawl-purple/40 flex items-center justify-center text-skrawl-purple font-header">
-                        {(u.display_name || "U").charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <div className="flex flex-col">
-                      <div className="text-header font-header">{u.display_name || `User #${u.id}`}</div>
-                    </div>
-                  </div>
-                  <p className="text-sm font-body line-clamp-3">{u.bio || "No bio"}</p>
-                </div>
+                <ProfileCard key={u.id} user={u} />
               ))}
               <div ref={sentinelRef} className="h-1" />
             </div>
