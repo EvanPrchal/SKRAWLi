@@ -364,7 +364,7 @@ const createCircleInRectangleMinigame = (): Minigame => {
     center,
     radiusX: halfRectWidth,
     radiusY: halfRectHeight,
-    reward: 10,
+    reward: 20,
     strokeColor: "transparent",
   };
 
@@ -375,7 +375,7 @@ const createCircleInRectangleMinigame = (): Minigame => {
 
   return {
     id: "m5",
-    name: "Ghosted Ellipse in Planes",
+    name: "Boss: Ghosted Ellipse in Planes",
     type: "traceShape",
     shapes,
     guides: [guideRectangle, ellipseGuide],
@@ -418,11 +418,7 @@ export const getRandomMinigames = (): Minigame[] => [
   })(),
   (() => {
     // Only one ellipse shape, so just set a fixed reward
-    const minigame = createCircleInRectangleMinigame();
-    return {
-      ...minigame,
-      totalReward: 25,
-    };
+    return createCircleInRectangleMinigame();
   })(),
   (() => {
     const shapes = generateRandomShapes(createRandomCircle);
@@ -433,7 +429,7 @@ export const getRandomMinigames = (): Minigame[] => [
       shapes,
       currentShapeIndex: 0,
       threshold: 45,
-      totalReward: 30,
+      totalReward: 25,
     } satisfies Minigame;
   })(),
 ];

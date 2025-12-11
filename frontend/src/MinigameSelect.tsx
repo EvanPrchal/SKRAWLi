@@ -53,7 +53,9 @@ const getMinigameOptions = (): Minigame[] => {
     }
   });
 
-  return Array.from(minigameMap.values());
+  const unique = Array.from(minigameMap.values());
+  // Order by reward ascending so lower-coin games appear first
+  return unique.sort((a, b) => a.totalReward - b.totalReward || a.name.localeCompare(b.name));
 };
 
 const MinigameSelect = () => {
@@ -251,7 +253,9 @@ const MinigameSelect = () => {
               <button
                 key={minigame.id}
                 onClick={() => handleMinigameSelect(minigame)}
-                className="bg-skrawl-purple text-skrawl-white p-6 rounded-lg hover:bg-skrawl-magenta transition-colors font-body text-body"
+                className={`bg-skrawl-purple text-skrawl-white p-6 rounded-lg hover:bg-skrawl-magenta transition-colors font-body text-body ${
+                  minigame.id === "m5" ? "col-span-2 justify-self-center" : ""
+                }`}
               >
                 <h3 className="font-header text-body mb-2">{minigame.name}</h3>
                 <p className="text-sm">Reward: {minigame.totalReward} coins</p>
