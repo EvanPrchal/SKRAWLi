@@ -81,7 +81,8 @@ const createRandomLine = (): Shape => {
   };
 };
 
-// Function to generate a random square
+// Function to generate a random square (kept for reference but unused - use createSquareDrawingMinigame for m2)
+/*
 const createRandomSquare = (): Shape => {
   const { width, height } = canvasDimensions;
   const maxSize = Math.min(width, height) * 0.3; // 30% of smallest dimension
@@ -128,6 +129,109 @@ const createRandomSquare = (): Shape => {
     ],
     reward: 15,
   };
+};
+*/
+
+let squareDrawingCounter = 0;
+
+const createSquareDrawingMinigame = (): Minigame => {
+  const { width, height } = canvasDimensions;
+  const maxSize = Math.min(width, height) * 0.3;
+  const size = random(maxSize * 0.5, maxSize);
+  const halfSize = size / 2;
+  const diagonalRadius = Math.sqrt(2) * halfSize;
+  const padding = diagonalRadius + Math.min(width, height) * 0.05;
+  const angle = Math.random() * Math.PI * 2;
+
+  let corners: Point[] | null = null;
+  let attempts = 0;
+
+  while (attempts < 20) {
+    const center = randomPointWithin(padding);
+    const localCorners: Point[] = [
+      { x: -halfSize, y: -halfSize },
+      { x: halfSize, y: -halfSize },
+      { x: halfSize, y: halfSize },
+      { x: -halfSize, y: halfSize },
+    ];
+
+    const rotatedCorners = localCorners.map((corner) =>
+      translatePoint(rotateAroundOrigin(corner, angle), center)
+    );
+    if (
+      rotatedCorners.every(
+        (corner) =>
+          corner.x >= padding &&
+          corner.x <= width - padding &&
+          corner.y >= padding &&
+          corner.y <= height - padding
+      )
+    ) {
+      corners = rotatedCorners;
+      break;
+    }
+    attempts += 1;
+  }
+
+  if (!corners) {
+    const fallbackTopLeft = randomPoint(size * 0.5);
+    corners = [
+      fallbackTopLeft,
+      { x: fallbackTopLeft.x + size, y: fallbackTopLeft.y },
+      { x: fallbackTopLeft.x + size, y: fallbackTopLeft.y + size },
+      { x: fallbackTopLeft.x, y: fallbackTopLeft.y + size },
+    ];
+  }
+
+  const [c0, c1, c2, c3] = corners;
+
+  // Guide shape showing the full square (same color as the individual sides)
+  const guideSquare: Shape = {
+    id: `squareDrawing-guide-${squareDrawingCounter}`,
+    type: "polygon",
+    points: [...corners, corners[0]],
+    reward: 0,
+    renderOrder: "under",
+  };
+
+  // 4 individual sides to draw
+  const shapes: Shape[] = [
+    {
+      id: `squareDrawing-side0-${squareDrawingCounter}`,
+      type: "polygon",
+      points: [c0, c1],
+      reward: 5,
+    },
+    {
+      id: `squareDrawing-side1-${squareDrawingCounter}`,
+      type: "polygon",
+      points: [c1, c2],
+      reward: 5,
+    },
+    {
+      id: `squareDrawing-side2-${squareDrawingCounter}`,
+      type: "polygon",
+      points: [c2, c3],
+      reward: 5,
+    },
+    {
+      id: `squareDrawing-side3-${squareDrawingCounter++}`,
+      type: "polygon",
+      points: [c3, c0],
+      reward: 5,
+    },
+  ];
+
+  return {
+    id: "m2",
+    name: "Trace Squares",
+    type: "traceShape",
+    shapes,
+    guides: [guideSquare],
+    currentShapeIndex: 0,
+    threshold: 40,
+    totalReward: 20,
+  } satisfies Minigame;
 };
 
 // Function to generate a random circle
@@ -317,16 +421,7 @@ export const getRandomMinigames = (): Minigame[] => [
     } satisfies Minigame;
   })(),
   (() => {
-    const shapes = generateRandomShapes(createRandomSquare);
-    return {
-      id: "m2",
-      name: "Trace Squares",
-      type: "traceShape",
-      shapes,
-      currentShapeIndex: 0,
-      threshold: 40,
-      totalReward: 20,
-    } satisfies Minigame;
+    return createSquareDrawingMinigame();
   })(),
   (() => {
     const shapeCount = random(1, 3);

@@ -86,6 +86,7 @@ const Minigames: React.FC<MinigamesProps> = ({
   const [pendingMinigame, setPendingMinigame] = useState<Minigame | null>(null);
   const [hasShownCountdown, setHasShownCountdown] = useState(skipCountdown);
   const [resetToken, setResetToken] = useState<number>(0);
+  const [m2SidesDrawn, setM2SidesDrawn] = useState<Set<number>>(new Set());
   const frameRef = useRef<number | null>(null);
   const timerActiveRef = useRef<boolean>(timerActive);
   const showTransitionRef = useRef<boolean>(showTransition);
@@ -130,6 +131,11 @@ const Minigames: React.FC<MinigamesProps> = ({
       setCurrentMinigame(instantiateMinigame(specificMinigame));
     }
   }, [specificMinigame]);
+
+  useEffect(() => {
+    // Reset m2 state when minigame changes
+    setM2SidesDrawn(new Set());
+  }, [currentMinigame.id]);
 
   useEffect(() => {
     if (skipCountdown && !hasShownCountdown) {
@@ -275,6 +281,68 @@ const Minigames: React.FC<MinigamesProps> = ({
     void reward; // reward included for API parity; rewards are handled when a minigame finishes
     console.log(`Trace attempt: ${success ? "Success" : "Failed"} with threshold ${currentMinigame.threshold}`);
 
+    // Special handling for m2 (square drawing with flexible selection)
+    if (currentMinigame.id === "m2") {
+      if (success) {
+        // Add the current shape to the completed set
+        const newSidesDrawn = new Set(m2SidesDrawn);
+        newSidesDrawn.add(currentMinigame.currentShapeIndex);
+        setM2SidesDrawn(newSidesDrawn);
+
+        // If all 4 sides are drawn, evaluate the result
+        if (newSidesDrawn.size >= 4) {
+          // For now, consider it successful if the user completed all 4 sides
+          const nextGame = specificMinigame
+            ? (() => {
+                const currentType = currentMinigame.id;
+                const randomMinigames = getRandomMinigames();
+                return randomMinigames.find((m) => m.id === currentType) || getRandomMinigame();
+              })()
+            : getRandomMinigame();
+          setPendingMinigame(nextGame);
+          setShowTransition(true);
+          onComplete(true, currentMinigame.totalReward);
+          setM2SidesDrawn(new Set());
+          return;
+        }
+
+        // Move to next undrawn side
+        let nextIndex = currentMinigame.currentShapeIndex + 1;
+        while (nextIndex < currentMinigame.shapes.length && newSidesDrawn.has(nextIndex)) {
+          nextIndex++;
+        }
+        // If all remaining sides are drawn, wrap around to find first undrawn
+        if (nextIndex >= currentMinigame.shapes.length) {
+          for (let i = 0; i < currentMinigame.shapes.length; i++) {
+            if (!newSidesDrawn.has(i)) {
+              nextIndex = i;
+              break;
+            }
+          }
+        }
+        setCurrentMinigame((prev) => ({
+          ...prev,
+          currentShapeIndex: nextIndex,
+        }));
+        return;
+      } else {
+        // Failed a side - reset the minigame
+        const nextGame = specificMinigame ? instantiateMinigame(getRandomMinigameById(specificMinigame.id) ?? specificMinigame) : getRandomMinigame();
+        setResetToken((token) => token + 1);
+        setCurrentMinigame(nextGame);
+        setPendingMinigame(null);
+        setM2SidesDrawn(new Set());
+        const nextTime = initialTime ?? MINIGAME_TIME;
+        setTimeLeft(nextTime);
+        onTimeUpdate(nextTime);
+        setTimerActive(true);
+        setHasShownCountdown(true);
+        onComplete(false, 0);
+        return;
+      }
+    }
+
+    // Regular handling for other minigames
     if (success) {
       const nextShapeIndex = currentMinigame.currentShapeIndex + 1;
 
@@ -354,6 +422,11 @@ const Minigames: React.FC<MinigamesProps> = ({
         guides={currentMinigame.guides}
         resetToken={resetToken}
       />
+      {currentMinigame.id === "m2" && (
+        <div className="absolute top-4 right-4 text-2xl font-bold text-skrawl-purple">
+          Lines Left: {4 - m2SidesDrawn.size}/{4}
+        </div>
+      )}
     </div>
   );
 };

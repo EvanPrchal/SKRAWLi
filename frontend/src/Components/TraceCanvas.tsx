@@ -429,8 +429,9 @@ function evaluateTrace(userPts: Point[], shape: Shape, threshold: number): boole
     const polygonShape = shape as PolygonShape;
     const pts = polygonShape.points;
     const isSquare = polygonShape.id.toLowerCase().includes("square");
-    const distanceThreshold = isSquare ? Math.max(threshold * 0.4, 8) : threshold;
-    const requiredCoverage = isSquare ? 0.95 : 0.7;
+    const isSquareDrawing = polygonShape.id.toLowerCase().includes("squaredrawing");
+    const distanceThreshold = isSquareDrawing ? Math.max(threshold * 0.7, 16) : isSquare ? Math.max(threshold * 0.4, 8) : threshold;
+    const requiredCoverage = isSquareDrawing ? 0.5 : isSquare ? 0.95 : 0.7;
 
     // Calculate total shape length for coverage check
     let totalShapeLength = 0;
