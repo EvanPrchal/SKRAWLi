@@ -411,6 +411,12 @@ const Minigames: React.FC<MinigamesProps> = ({
     );
   }
 
+  const guidesToShow = (() => {
+    if (currentMinigame.id !== "m5" || !currentMinigame.guides) return currentMinigame.guides;
+    const showEllipseGuide = currentMinigame.currentShapeIndex >= 6; // after edges (4) + diagonals (2)
+    return currentMinigame.guides.filter((g) => showEllipseGuide || !g.id.toLowerCase().includes("guide-ellipse"));
+  })();
+
   return (
     <div className="w-full h-full">
       <TraceCanvas
@@ -419,12 +425,17 @@ const Minigames: React.FC<MinigamesProps> = ({
         threshold={currentMinigame.threshold}
         currentTime={timeLeft}
         onComplete={handleComplete}
-        guides={currentMinigame.guides}
+        guides={guidesToShow}
         resetToken={resetToken}
       />
       {currentMinigame.id === "m2" && (
         <div className="absolute top-4 right-4 text-2xl font-bold text-skrawl-purple">
           Lines Left: {4 - m2SidesDrawn.size}/{4}
+        </div>
+      )}
+      {currentMinigame.id === "m5" && (
+        <div className="absolute top-4 right-4 text-2xl font-bold text-skrawl-purple">
+          Lines Left: {currentMinigame.shapes.length - currentMinigame.currentShapeIndex}/{currentMinigame.shapes.length}
         </div>
       )}
     </div>

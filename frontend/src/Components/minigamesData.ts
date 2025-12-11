@@ -323,86 +323,65 @@ const createCircleInRectangleMinigame = (): Minigame => {
   const bottomRight: Point = { x: center.x + halfRectWidth, y: center.y + halfRectHeight };
   const bottomLeft: Point = { x: center.x - halfRectWidth, y: center.y + halfRectHeight };
 
+  // Guide rectangle under the user-drawn lines
   const guideRectangle: Shape = {
-    id: `circleBox-guide-${circleInBoxCounter}`,
+    id: `ellipsePlanes-guide-${circleInBoxCounter}`,
     type: "polygon",
     points: [topLeft, topRight, bottomRight, bottomLeft, topLeft],
     reward: 0,
-    strokeColor: "#000000",
-    renderOrder: "over",
+    renderOrder: "under",
   };
 
-  // Create 4 marker dots at the cardinal points of the ellipse
-  const markerRadius = 6;
-  const topMarker: Point = { x: center.x, y: center.y - halfRectHeight };
-  const bottomMarker: Point = { x: center.x, y: center.y + halfRectHeight };
-  const leftMarker: Point = { x: center.x - halfRectWidth, y: center.y };
-  const rightMarker: Point = { x: center.x + halfRectWidth, y: center.y };
+  // 4 square edges
+  const edges: Shape[] = [
+    { id: `ellipsePlanes-edge0-${circleInBoxCounter}`, type: "polygon", points: [topLeft, topRight], reward: 5 },
+    { id: `ellipsePlanes-edge1-${circleInBoxCounter}`, type: "polygon", points: [topRight, bottomRight], reward: 5 },
+    { id: `ellipsePlanes-edge2-${circleInBoxCounter}`, type: "polygon", points: [bottomRight, bottomLeft], reward: 5 },
+    { id: `ellipsePlanes-edge3-${circleInBoxCounter}`, type: "polygon", points: [bottomLeft, topLeft], reward: 5 },
+  ];
 
-  // Create small circle shapes for each marker
-  const topMarkerShape: Shape = {
-    id: `circleBox-marker-top-${circleInBoxCounter}`,
-    type: "circle",
-    center: topMarker,
-    radius: markerRadius,
-    reward: 0,
-    strokeColor: "#000000",
-    renderOrder: "over",
-  };
+  // 2 intersecting diagonals through the center
+  const diagonals: Shape[] = [
+    { id: `ellipsePlanes-diag0-${circleInBoxCounter}`, type: "polygon", points: [topLeft, bottomRight], reward: 5 },
+    { id: `ellipsePlanes-diag1-${circleInBoxCounter}`, type: "polygon", points: [topRight, bottomLeft], reward: 5 },
+  ];
 
-  const bottomMarkerShape: Shape = {
-    id: `circleBox-marker-bottom-${circleInBoxCounter}`,
-    type: "circle",
-    center: bottomMarker,
-    radius: markerRadius,
-    reward: 0,
-    strokeColor: "#000000",
-    renderOrder: "over",
-  };
-
-  const leftMarkerShape: Shape = {
-    id: `circleBox-marker-left-${circleInBoxCounter}`,
-    type: "circle",
-    center: leftMarker,
-    radius: markerRadius,
-    reward: 0,
-    strokeColor: "#000000",
-    renderOrder: "over",
-  };
-
-  const rightMarkerShape: Shape = {
-    id: `circleBox-marker-right-${circleInBoxCounter}`,
-    type: "circle",
-    center: rightMarker,
-    radius: markerRadius,
-    reward: 0,
-    strokeColor: "#000000",
-    renderOrder: "over",
-  };
-
-  // Ellipse shape to trace (invisible - no strokeColor renders it invisible)
-  const ellipseShape: Shape = {
-    id: `circleBox-ellipse-${circleInBoxCounter}`,
+  // Guide ellipse outline (same color as lines)
+  const ellipseGuide: Shape = {
+    id: `ellipsePlanes-guide-ellipse-${circleInBoxCounter}`,
     type: "ellipse",
     center,
     radiusX: halfRectWidth,
     radiusY: halfRectHeight,
-    reward: 24,
+    reward: 0,
+    renderOrder: "under",
+  };
+
+  // Ellipse to draw last
+  const ellipseShape: Shape = {
+    id: `ellipsePlanes-ellipse-${circleInBoxCounter}`,
+    type: "ellipse",
+    center,
+    radiusX: halfRectWidth,
+    radiusY: halfRectHeight,
+    reward: 10,
     strokeColor: "transparent",
   };
 
   circleInBoxCounter += 1;
 
+  const shapes: Shape[] = [...edges, ...diagonals, ellipseShape];
+  const totalReward = shapes.reduce((sum, s) => sum + s.reward, 0);
+
   return {
     id: "m5",
     name: "Ghosted Ellipse in Planes",
     type: "traceShape",
-    shapes: [ellipseShape],
-    guides: [guideRectangle, topMarkerShape, bottomMarkerShape, leftMarkerShape, rightMarkerShape],
+    shapes,
+    guides: [guideRectangle, ellipseGuide],
     currentShapeIndex: 0,
-    threshold: 35,
-    totalReward: ellipseShape.reward,
-    transitionLabel: "CIRCLE!",
+    threshold: 40,
+    totalReward,
   } satisfies Minigame;
 };
 
