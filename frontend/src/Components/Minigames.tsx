@@ -129,6 +129,7 @@ const Minigames: React.FC<MinigamesProps> = ({
   useEffect(() => {
     if (specificMinigame) {
       setCurrentMinigame(instantiateMinigame(specificMinigame));
+      setResetToken((token) => token + 1); // clear any prior strokes when locking to a specific game
     }
   }, [specificMinigame]);
 
@@ -265,6 +266,7 @@ const Minigames: React.FC<MinigamesProps> = ({
       const timer = setTimeout(() => {
         const nextMinigame = pendingMinigame ?? getRandomMinigame();
         setCurrentMinigame(nextMinigame);
+        setResetToken((token) => token + 1); // reset strokes when switching minigames
         setPendingMinigame(null);
         setShowTransition(false);
         const nextTime = initialTime ?? MINIGAME_TIME;
