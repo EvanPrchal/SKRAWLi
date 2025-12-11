@@ -195,7 +195,7 @@ const GameplayLayout: React.FC<GameplayLayoutProps> = ({ lives, timeRemaining, u
     <div className="flex flex-col h-screen bg-skrawl-cyan bg-[url('/src/assets/images/background.png')] bg-cover items-center justify-center relative">
       <section className="gameplay-ui w-4/6 bg-skrawl-white mb-2 rounded-t-lg text-skrawl-purple flex justify-around font-header text-body items-center">
         <div className="lives-ui flex items-center justify-center gap-2 leading-none">
-          <img src="./src/assets/svgs/lives.png" alt="Lives" className="w-1/6" />
+          <img src="./src/assets/svgs/lives.png" alt="Lives" className="w-1/6" draggable={false} onDragStart={(event) => event.preventDefault()} />
           <h1 className="translate-y-[8px]">x{lives}</h1>
         </div>
         <img
@@ -203,10 +203,18 @@ const GameplayLayout: React.FC<GameplayLayoutProps> = ({ lives, timeRemaining, u
           alt={`${avatarLabel} splotch avatar${userName ? ` for ${userName}` : ""}`}
           className="w-[10%] self-center cursor-pointer"
           onClick={handleAvatarClick}
+          draggable={false}
+          onDragStart={(event) => event.preventDefault()}
         />
         <section className="timer-ui flex justify-center">
           <div className="relative flex items-center justify-center w-1/6 leading-none">
-            <img src="./src/assets/svgs/time.png" alt="Seconds" className="w-full" />
+            <img
+              src="./src/assets/svgs/time.png"
+              alt="Seconds"
+              className="w-full"
+              draggable={false}
+              onDragStart={(event) => event.preventDefault()}
+            />
             <span className="pointer-events-none absolute inset-0 translate-y-[8px] flex items-center justify-center font-header text-body text-skrawl-purple leading-none">
               {Math.max(timeRemaining, 0).toFixed(2)}
             </span>
