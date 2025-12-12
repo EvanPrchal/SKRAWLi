@@ -18,6 +18,7 @@ interface MinigamesProps {
   specificMinigame?: Minigame; // Optional: start with a specific minigame
   skipCountdown?: boolean; // Skip the initial countdown if true
   freezeTimer?: boolean; // Pause active timer while true
+  minigamesCompleted?: number; // Track completed games to trigger boss every 10
 }
 
 const clonePoint = (point: Point): Point => ({
@@ -46,7 +47,7 @@ const instantiateMinigame = (minigame: Minigame): Minigame => ({
   currentShapeIndex: 0,
 });
 
-const MINIGAME_TIME = 10; // default seconds per minigame
+const MINIGAME_TIME = 15; // default seconds per minigame (medium)
 
 const countdownImageMap: Record<string, string> = {
   "3": threeCountdownImg,
@@ -63,14 +64,20 @@ const Minigames: React.FC<MinigamesProps> = ({
   specificMinigame,
   skipCountdown = false,
   freezeTimer = false,
+  minigamesCompleted = 0,
 }) => {
   const sfxVolume = useSfxVolume();
   // Function to get a random minigame
   const getRandomMinigame = useCallback(() => {
+    // Every 10th game (at counts 9, 19, 29, etc.), show the boss
+    if ((minigamesCompleted + 1) % 10 === 0) {
+      const m5 = getRandomMinigames().find((game) => game.id === "m5");
+      if (m5) return m5;
+    }
     const randomMinigames = getRandomMinigames();
     const randomIndex = Math.floor(Math.random() * randomMinigames.length);
     return randomMinigames[randomIndex];
-  }, []);
+  }, [minigamesCompleted]);
 
   const getRandomMinigameById = useCallback((id: string) => {
     const randomMinigames = getRandomMinigames();

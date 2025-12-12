@@ -13,9 +13,9 @@ import yaySound from "./assets/sound/yay.wav";
 const timeForDifficulty = (level: string): number => {
   switch (level) {
     case "easy":
-      return 20;
-    case "hard":
       return 10;
+    case "hard":
+      return 20;
     case "normal":
     default:
       return 15;
@@ -280,6 +280,7 @@ const MinigameSelect = () => {
             specificMinigame={selectedMinigame}
             skipCountdown={minigamesCompleted > 0 || notification !== ""}
             freezeTimer={freezeTimer}
+            minigamesCompleted={minigamesCompleted}
           />
         </div>
       ) : (

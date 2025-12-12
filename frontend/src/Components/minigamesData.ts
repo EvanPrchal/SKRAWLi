@@ -382,6 +382,7 @@ const createCircleInRectangleMinigame = (): Minigame => {
     currentShapeIndex: 0,
     threshold: 40,
     totalReward,
+    transitionLabel: "BOSS!",
   } satisfies Minigame;
 };
 

@@ -13,12 +13,12 @@ import yaySound from "./assets/sound/yay.wav";
 const timeForDifficulty = (level: string): number => {
   switch (level) {
     case "easy":
-      return 20;
+      return 10;
     case "hard":
-      return 12;
+      return 20;
     case "normal":
     default:
-      return 16;
+      return 15;
   }
 };
 
