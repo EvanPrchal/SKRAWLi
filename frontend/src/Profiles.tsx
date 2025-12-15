@@ -20,15 +20,17 @@ interface ProfileCardProps {
 
 const ProfileCard: React.FC<ProfileCardProps> = ({ user: u }) => {
   const displayImage = useProfileImage(u.id, u.picture_url);
+  const [imageLoadError, setImageLoadError] = useState(false);
 
   return (
     <div className="rounded border border-skrawl-purple/30 bg-white/80 p-3 flex flex-col gap-2">
       <div className="flex items-center gap-3">
-        {displayImage ? (
+        {displayImage && !imageLoadError ? (
           <img
             src={displayImage}
             alt={u.display_name || `User ${u.id}`}
             className="w-10 h-10 rounded-full border border-skrawl-purple/40 object-cover"
+            onError={() => setImageLoadError(true)}
           />
         ) : (
           <div className="w-10 h-10 rounded-full bg-skrawl-purple/20 border border-skrawl-purple/40 flex items-center justify-center text-skrawl-purple font-header">

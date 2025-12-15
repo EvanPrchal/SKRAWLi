@@ -27,6 +27,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profileBackground, onBackgrou
   const [displayName, setDisplayName] = useState<string>("");
   const [pictureUrl, setPictureUrl] = useState<string | null>(null);
   const displayImage = useProfileImage(user?.sub || "unknown", pictureUrl);
+  const [imageLoadError, setImageLoadError] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasColorPicker, setHasColorPicker] = useState(false);
@@ -156,11 +157,12 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profileBackground, onBackgrou
   return (
     <div className="text-center flex justify-around w-full gap-8">
       <section className="flex flex-col justify-center items-center space-y-4">
-        {displayImage ? (
+        {displayImage && !imageLoadError ? (
           <img
             className="w-28 h-28 rounded-full border border-skrawl-purple/40 object-cover"
             src={displayImage}
             alt={displayName || user?.name || "Profile"}
+            onError={() => setImageLoadError(true)}
           />
         ) : (
           <div className="w-28 h-28 rounded-full bg-skrawl-purple/20 border border-skrawl-purple/40 flex items-center justify-center text-skrawl-purple text-3xl font-header">

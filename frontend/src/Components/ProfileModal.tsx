@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { useProfileImage } from "../lib/useProfileImage";
 
@@ -24,6 +24,7 @@ interface ProfileModalProps {
 
 const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, profile, loading, error, isFriend, onAddFriend, onRemoveFriend }) => {
   const displayImage = useProfileImage(profile?.id || "unknown", profile?.picture_url || null);
+  const [imageLoadError, setImageLoadError] = useState(false);
   const showcased = (profile?.showcased_badges || "")
     .split(/[,\s]+/)
     .filter((b) => b.trim().length > 0)
@@ -68,11 +69,12 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, profile, l
                 {!loading && profile && (
                   <div className="flex flex-col gap-4">
                     <div className="flex items-center gap-4">
-                      {displayImage ? (
+                      {displayImage && !imageLoadError ? (
                         <img
                           src={displayImage}
                           alt={profile.display_name || `User ${profile.id}`}
                           className="w-16 h-16 rounded-full border border-skrawl-purple/40 object-cover"
+                          onError={() => setImageLoadError(true)}
                         />
                       ) : (
                         <div className="w-16 h-16 rounded-full bg-skrawl-purple/20 border border-skrawl-purple/40 flex items-center justify-center text-skrawl-purple font-header text-xl">
