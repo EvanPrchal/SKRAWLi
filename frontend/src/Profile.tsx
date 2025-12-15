@@ -18,6 +18,7 @@ const Profile = () => {
   };
 
   const [profileBackground, setProfileBackground] = useState<string>("bg-skrawl-purple");
+  const [draftBackground, setDraftBackground] = useState<string | null>(null);
   const [backgroundLoaded, setBackgroundLoaded] = useState<boolean>(false);
   const [badgesLoaded, setBadgesLoaded] = useState<boolean>(false);
   const [allBadges, setAllBadges] = useState<any[]>([]);
@@ -60,10 +61,12 @@ const Profile = () => {
   const ready = useDataReady([!isLoading, backgroundLoaded, badgesLoaded]);
   if (!ready) return <Loading />;
 
+  const effectiveBackground = draftBackground ?? profileBackground;
+
   // Check if it's a hex color or Tailwind class
-  const isHexColor = profileBackground.startsWith("#");
-  const backgroundStyle = isHexColor ? { backgroundColor: profileBackground } : {};
-  const backgroundClass = isHexColor ? "" : profileBackground;
+  const isHexColor = effectiveBackground.startsWith("#");
+  const backgroundStyle = isHexColor ? { backgroundColor: effectiveBackground } : {};
+  const backgroundClass = isHexColor ? "" : effectiveBackground;
 
   return (
     <div className={`flex flex-col min-h-screen ${backgroundClass} bg-[url(/src/assets/images/background.png)] bg-cover`} style={backgroundStyle}>
@@ -87,7 +90,12 @@ const Profile = () => {
             </Tab.List>
             <Tab.Panels className="flex-1 flex flex-col gap-0">
               <Tab.Panel className="w-full flex-1 flex items-center justify-center p-6">
-                <ProfileInfo profileBackground={profileBackground} onBackgroundChange={setProfileBackground} />
+                <ProfileInfo
+                  profileBackground={profileBackground}
+                  onBackgroundChange={setProfileBackground}
+                  onBackgroundPreview={setDraftBackground}
+                  onBackgroundPreviewEnd={() => setDraftBackground(null)}
+                />
               </Tab.Panel>
               <Tab.Panel className="w-full flex-1 flex items-center justify-center p-6">
                 <OwnedBadges allBadges={allBadges} ownedCodes={ownedCodes} />

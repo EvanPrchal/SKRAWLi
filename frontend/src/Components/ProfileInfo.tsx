@@ -12,6 +12,8 @@ type BadgeInfo = {
 interface ProfileInfoProps {
   profileBackground: string;
   onBackgroundChange: (bg: string) => void;
+  onBackgroundPreview?: (bg: string) => void;
+  onBackgroundPreviewEnd?: () => void;
 }
 
 const BACKGROUND_OPTIONS = [
@@ -20,7 +22,7 @@ const BACKGROUND_OPTIONS = [
   { name: "3", value: "bg-skrawl-orange" },
 ];
 
-const ProfileInfo: React.FC<ProfileInfoProps> = ({ profileBackground, onBackgroundChange }) => {
+const ProfileInfo: React.FC<ProfileInfoProps> = ({ profileBackground, onBackgroundChange, onBackgroundPreview, onBackgroundPreviewEnd }) => {
   const { user, isLoading } = useAuth0();
   const api = useApi();
   const [bio, setBio] = useState<string>("");
@@ -84,17 +86,25 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profileBackground, onBackgrou
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading]);
 
+  // Sync editProfileBackground with prop only when not editing
+  useEffect(() => {
+    if (!isEditing) {
+      setEditProfileBackground(profileBackground);
+    }
+  }, [profileBackground, isEditing]);
+
   const handleEdit = () => {
     setEditDisplayName(displayName);
     setEditBio(bio);
     setEditProfileBackground(profileBackground);
     setEditShowcasedBadges([...showcasedBadgeCodes]);
     setIsEditing(true);
+    onBackgroundPreview?.(profileBackground);
   };
 
   const handleBackgroundSelect = (bg: string) => {
     setEditProfileBackground(bg);
-    onBackgroundChange(bg); // Preview immediately
+    onBackgroundPreview?.(bg);
   };
 
   const toggleShowcasedBadge = (code: string) => {
@@ -129,6 +139,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profileBackground, onBackgrou
       setPictureUrl(updated.picture_url || user?.picture || null);
       const newBackground = updated.profile_background || editProfileBackground;
       onBackgroundChange(newBackground);
+      onBackgroundPreviewEnd?.();
       setIsEditing(false);
     } catch (err) {
       console.error("Failed to save profile:", err);
@@ -141,7 +152,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profileBackground, onBackgrou
   const handleCancel = () => {
     setEditDisplayName(displayName);
     setEditBio(bio);
-    onBackgroundChange(profileBackground); // Revert preview
+    onBackgroundPreviewEnd?.();
     setEditProfileBackground(profileBackground);
     setEditShowcasedBadges([...showcasedBadgeCodes]);
     setIsEditing(false);
