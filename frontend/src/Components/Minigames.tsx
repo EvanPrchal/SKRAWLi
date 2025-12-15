@@ -5,7 +5,7 @@ import oneCountdownImg from "../assets/images/1_countdown.png";
 import goCountdownImg from "../assets/images/go_countdown.png";
 import type { Minigame, Shape, Point } from "./types";
 import { getRandomMinigames } from "./minigamesData";
-import TraceCanvas from "./TraceCanvas";
+import TraceCanvas, { evaluateTrace } from "./TraceCanvas";
 import countdownSound from "../assets/sound/countdown.wav";
 import startSound from "../assets/sound/start.wav";
 import { useSfxVolume } from "../lib/sfxVolume";
@@ -286,21 +286,36 @@ const Minigames: React.FC<MinigamesProps> = ({
     }
   }, [showTransition, pendingMinigame, initialTime, onTimeUpdate, getRandomMinigame]);
 
-  const handleComplete = (success: boolean, reward: number) => {
+  const handleComplete = (success: boolean, reward: number, strokePoints: any) => {
     void reward; // reward included for API parity; rewards are handled when a minigame finishes
     console.log(`Trace attempt: ${success ? "Success" : "Failed"} with threshold ${currentMinigame.threshold}`);
 
     // Special handling for m2 (square drawing with flexible selection)
     if (currentMinigame.id === "m2") {
       if (success) {
-        // Add the current shape to the completed set
+        const points = Array.isArray(strokePoints) ? strokePoints : [];
         const newSidesDrawn = new Set(m2SidesDrawn);
-        newSidesDrawn.add(currentMinigame.currentShapeIndex);
+
+        // Try to match this stroke against any remaining side.
+        let matchedIndex: number | null = null;
+        for (let i = 0; i < currentMinigame.shapes.length; i++) {
+          if (newSidesDrawn.has(i)) continue;
+          const shape = currentMinigame.shapes[i];
+          if (evaluateTrace(points, shape, currentMinigame.threshold)) {
+            matchedIndex = i;
+            break;
+          }
+        }
+
+        // Fall back to the currently targeted side.
+        if (matchedIndex === null) {
+          matchedIndex = currentMinigame.currentShapeIndex;
+        }
+
+        newSidesDrawn.add(matchedIndex);
         setM2SidesDrawn(newSidesDrawn);
 
-        // If all 4 sides are drawn, evaluate the result
         if (newSidesDrawn.size >= 4) {
-          // For now, consider it successful if the user completed all 4 sides
           const nextGame = specificMinigame
             ? (() => {
                 const currentType = currentMinigame.id;
@@ -315,18 +330,12 @@ const Minigames: React.FC<MinigamesProps> = ({
           return;
         }
 
-        // Move to next undrawn side
-        let nextIndex = currentMinigame.currentShapeIndex + 1;
-        while (nextIndex < currentMinigame.shapes.length && newSidesDrawn.has(nextIndex)) {
-          nextIndex++;
-        }
-        // If all remaining sides are drawn, wrap around to find first undrawn
-        if (nextIndex >= currentMinigame.shapes.length) {
-          for (let i = 0; i < currentMinigame.shapes.length; i++) {
-            if (!newSidesDrawn.has(i)) {
-              nextIndex = i;
-              break;
-            }
+        // Keep currentShapeIndex pointing at the next remaining side for visual guidance only.
+        let nextIndex = 0;
+        for (let i = 0; i < currentMinigame.shapes.length; i++) {
+          if (!newSidesDrawn.has(i)) {
+            nextIndex = i;
+            break;
           }
         }
         setCurrentMinigame((prev) => ({

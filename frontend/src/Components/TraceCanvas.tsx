@@ -9,7 +9,7 @@ interface TraceCanvasProps {
   currentShapeIndex: number;
   threshold?: number;
   currentTime: number;
-  onComplete: (success: boolean, reward: number) => void;
+  onComplete: (success: boolean, reward: number, strokePoints: Point[]) => void;
   guides?: Shape[];
   resetToken?: number;
 }
@@ -189,7 +189,7 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
     const strokePoints = [...userPointsRef.current];
     // Evaluate only this stroke attempt (failed stroke shouldn't persist)
     const success = evaluateTrace(strokePoints, currentShape, threshold);
-    onComplete(success, currentShape.reward);
+    onComplete(success, currentShape.reward, strokePoints);
     if (success) {
       // Persist successful stroke for this shape
       completedStrokesRef.current.push({ points: strokePoints, brush: currentStrokeBrushRef.current });
@@ -419,7 +419,7 @@ const TraceCanvas: React.FC<TraceCanvasProps> = ({ shapes, currentShapeIndex, th
   );
 };
 
-function evaluateTrace(userPts: Point[], shape: Shape, threshold: number): boolean {
+export function evaluateTrace(userPts: Point[], shape: Shape, threshold: number): boolean {
   if (userPts.length === 0) return false;
 
   // Minimum points needed for a valid trace
