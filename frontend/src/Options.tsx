@@ -23,29 +23,21 @@ const Options = () => {
       return Number.isNaN(parsed) ? 50 : parsed;
     })
   );
-  const [musicVolume, setMusicVolume] = useState(() =>
-    readFromStorage("musicVolume", 50, (v) => {
-      const parsed = Number(v);
-      return Number.isNaN(parsed) ? 50 : parsed;
-    })
-  );
   const [showTimer, setShowTimer] = useState(() => readFromStorage("showTimer", true, (v) => v === "true"));
 
   const handleSaveSettings = () => {
     localStorage.setItem("showTimer", showTimer.toString());
     localStorage.setItem("difficultyLevel", difficultyLevel);
     localStorage.setItem("sfxVolume", sfxVolume.toString());
-    localStorage.setItem("musicVolume", musicVolume.toString());
     // Broadcast settings update so other components can react
     window.dispatchEvent(
       new CustomEvent("settingsUpdated", {
-        detail: { difficultyLevel, showTimer, sfxVolume, musicVolume },
+        detail: { difficultyLevel, showTimer, sfxVolume },
       })
     );
     console.log("Settings saved:", {
       difficultyLevel,
       sfxVolume,
-      musicVolume,
       showTimer,
     });
     // Redirect to home page
@@ -91,19 +83,6 @@ const Options = () => {
                   max="100"
                   value={sfxVolume}
                   onChange={(e) => setSfxVolume(Number(e.target.value))}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-skrawl-cyan"
-                />
-              </div>
-
-              {/* Music Volume */}
-              <div className="flex flex-col gap-2">
-                <label className="text-body font-body text-skrawl-purple">Music Volume: {musicVolume}%</label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={musicVolume}
-                  onChange={(e) => setMusicVolume(Number(e.target.value))}
                   className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-skrawl-cyan"
                 />
               </div>

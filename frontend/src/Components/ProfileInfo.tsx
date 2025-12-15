@@ -127,8 +127,8 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profileBackground, onBackgrou
       setShowcasedBadgeCodes(updatedCodes);
       setEditShowcasedBadges(updatedCodes);
       setPictureUrl(updated.picture_url || user?.picture || null);
-      onBackgroundChange(updated.profile_background || profileBackground);
-      setEditProfileBackground(updated.profile_background || profileBackground);
+      const newBackground = updated.profile_background || editProfileBackground;
+      onBackgroundChange(newBackground);
       setIsEditing(false);
     } catch (err) {
       console.error("Failed to save profile:", err);
