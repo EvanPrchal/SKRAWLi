@@ -13,9 +13,9 @@ import yaySound from "./assets/sound/yay.wav";
 const timeForDifficulty = (level: string): number => {
   switch (level) {
     case "easy":
-      return 10;
-    case "hard":
       return 20;
+    case "hard":
+      return 10;
     case "normal":
     default:
       return 15;
@@ -100,7 +100,7 @@ const Run = () => {
         console.error(`Failed to play sound: ${src}`, error);
       }
     },
-    [sfxVolume]
+    [sfxVolume],
   );
 
   const playWinSound = useCallback(() => {
@@ -172,7 +172,7 @@ const Run = () => {
         })
         .catch((err) => console.error(`Failed to award badge ${code}:`, err));
     },
-    [api, isGuest, ownedBadges]
+    [api, isGuest, ownedBadges],
   );
 
   const handleComplete = (success: boolean, reward: number) => {
